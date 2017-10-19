@@ -55,6 +55,11 @@ Equipment.Types =
     };
 Equipment.Hulls = {
 
+    Ship0:
+        {
+
+        },
+
     Ship1:
         {   name: "Droplet",
             title: "Капелька 2050",

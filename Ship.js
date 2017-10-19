@@ -1,11 +1,57 @@
 /**
  * Created by goblino on 13.10.2017.
  */
-var Ship = {
+var Ship = function (params) {
+    if(params)
+        for (var p in params) {
+        if(params[p])
+            this[p] = params[p];
+    }
+};
+
+
+
+Ship.prototype.init= function (x,y,game,colGroup,colGroups,hull)  {
+    this.x = x;
+    this.y = y;
+    this.game = game;
+    this.colGroup = colGroups;
+    this.colGroups = colGroups;
+    this.eq.hull = hull || Equipment.Hulls.Ship0;
+
+};
+
+
+var NPCShip = function (params) {
+ Ship.apply(this,arguments);
+
+};
+NPCShip.prototype = Object.create(Ship.prototype);
+var nps = new NPCShip();
+console.log(nps.mass);
+var npcShip = new NPCShip({
+    x:0,
+    y:0
+
+});
+
+var Player = {};
+
+
+Player = {
     sin: 0,
     cos: 0,
     _money: 0,
     globalStatus: '',
+    get mass() {
+        return this.b.body.mass*1000;
+    },
+    set mass(value) {
+
+        this.b.body.mass = value/1000;
+    },
+
+
     get money() {
         if (this._money > 0)
             return this._money;
@@ -1165,12 +1211,4 @@ var Ship = {
 
     b:{}
 };
-Object.defineProperty(Ship, "mass", {
-    get: function() {
-        return this.b.body.mass*1000;
-    },
-    set: function (value) {
-
-        this.b.body.mass = value/1000;
-    }
-});
+Player.prototype = Object.create(Ship.prototype);

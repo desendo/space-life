@@ -74,7 +74,7 @@ var PickableObject =
           this.info.mass = this.mass ||this.config.mass ;
           this.info.summary = this.info.title+"\n"+this.info.volume+"куб.м.\n"+this.info.mass + "т.";
 
-        },
+        }
     };
 
 var Material = Object.create(PickableObject);

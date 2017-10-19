@@ -114,7 +114,7 @@ SpaceLifeGame.MainState.prototype = {
         planet2.b.body.setMaterial(planetMaterial);
         var pos = new Phaser.Point(planets[0].x,(planets[0].y-planets[0].b.width*0.56-100));
 
-        game.ship = Object.create(Ship).constructor(pos.x,pos.y,game,Equipment.Hulls.Ship1);
+        game.ship = Object.create(Player).constructor(pos.x,pos.y,game,Equipment.Hulls.Ship1);
         ship = game.ship;
         ship.b.body.setMaterial(shipMaterial);
 
