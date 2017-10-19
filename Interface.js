@@ -583,9 +583,9 @@ var Interface = {
         labels.labelMass.text = "Масса: "+ ship.mass+"t";
         labels.labelCargo.text = "Грузовой отсек: "+ ship.cargoBay+"/"+ship.cargoBayCap;
 
-        labels.labelDamping.text = (ship.b.body.damping==0 || ship.vel<1) ? "" : "аэродин.торм.: "+ ship.b.body.damping.toFixed(1) ;
-        labels.labelDamping.style.backgroundColor = "#ff9300";
-        labels.labelDamping.style.fill = "#030329";
+        // labels.labelDamping.text = (ship.b.body.damping==0 || ship.vel<1) ? "" : "аэродин.торм.: "+ ship.b.body.damping.toFixed(1) ;
+        // labels.labelDamping.style.backgroundColor = "#ff9300";
+        // labels.labelDamping.style.fill = "#030329";
 
 
         var detail = 10;

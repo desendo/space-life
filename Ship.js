@@ -1,69 +1,63 @@
 /**
  * Created by goblino on 13.10.2017.
  */
-var Ship = function (params) {
-    if(params)
-        for (var p in params) {
-        if(params[p])
-            this[p] = params[p];
-    }
+
+function Ship (x,y,game,hull) {
+    var ship = Object.create(Ship.prototype)
+
+    ship.game = game;
+    ship.eq ={};
+    ship.eq.hull = hull;
+    ship.b = ship.game.add.sprite(x,y,ship.eq.hull.sprite);
+    ship.b.anchor.set(0.5);
+    ship.b.smoothed=false;
+    ship.b.scale.set(2);
+    ship.b.smoothed= false;
+
+    ship.game.physics.p2.enable(ship.b,GLOBAL.IS_DEBUG);
+    ship.b.body.damping=ship.damping || 0.5;
+    ship.b.body.setCircle(ship.b.width/3,0,0);
+    ship.b.body.setCollisionGroup(ship.game.spaceBodiesColGroup);
+    ship.b.body.collides([ship.game.spaceBodiesColGroup,ship.game.playerColGroup]);
+
+    ship.b.parentObject = ship;
+    ship.b.body.parentObject = ship;
+    Object.defineProperty(ship, "mass", {
+        get: function() {
+            return ship.b.body.mass*1000;
+        },
+
+        set: function(value) {
+
+
+            console.log("setting mass "+ship.b.body.mass);
+            console.log("with "+value);
+            ship.b.body.mass = Math.abs(value)/1000;
+            console.log("seted"+ship.b.body.mass);
+
+        }
+    });
+    ship.mass = ship.eq.hull.mass;
+
+
+
+    return ship;
+
 };
 
 
-
-Ship.prototype.init= function (x,y,game,colGroup,colGroups,hull)  {
-    this.x = x;
-    this.y = y;
-    this.game = game;
-    this.colGroup = colGroups;
-    this.colGroups = colGroups;
-    this.eq.hull = hull || Equipment.Hulls.Ship0;
+var Player = function (x,y,game,hull) {
+    this.constructor(x,y,game,hull);
 
 };
 
-
-var NPCShip = function (params) {
- Ship.apply(this,arguments);
-
-};
-NPCShip.prototype = Object.create(Ship.prototype);
-var nps = new NPCShip();
-console.log(nps.mass);
-var npcShip = new NPCShip({
-    x:0,
-    y:0
-
-});
-
-var Player = {};
-
-
-Player = {
+Player.prototype = {
     sin: 0,
     cos: 0,
     _money: 0,
     globalStatus: '',
-    get mass() {
-        return this.b.body.mass*1000;
-    },
-    set mass(value) {
-
-        this.b.body.mass = value/1000;
-    },
 
 
-    get money() {
-        if (this._money > 0)
-            return this._money;
-        else
-            return 0;
-    },
-    set money(value) {
-        if (value >= 0)
-            this._money = value;
-
-
-    },
     eq: {
         engine: null,
         weapon: null,
@@ -100,129 +94,162 @@ Player = {
     damping: 0,
     deltaCross: 0,
     planetLanded: {},
-    _thrustCurrentDamp:0,
-    get thrustCurrentDamp()
-    {
+    _thrustCurrentDamp: 0,
+    get thrustCurrentDamp() {
         return this._thrustCurrentDamp;
     },
-    set thrustCurrentDamp(val)
-    {
-        if (val>this.thrustMaximum)
+    set thrustCurrentDamp(val) {
+        if (val > this.thrustMaximum)
             val = this.thrustMaximum;
-        if (val<0)
+        if (val < 0)
             val = 0;
 
         this._thrustCurrentDamp = val;
+
     },
     _thrustCurrent: 0,
-    get thrustCurrent()
-    {
-        return this._thrustCurrent;
-    },
-    set thrustCurrent(val)
-    {
-      if (val>this.thrustMaximum)
-          val = this.thrustMaximum;
-       if (val<0)
-          val = 0;
 
-        this._thrustCurrent = val;
-    },
 
-    get dir() {
-        return (new Phaser.Point(Math.sin(this.b.body.rotation), -Math.cos(this.b.body.rotation)));
-    },
-    get velNorm(){
-        return new Phaser.Point(
-            this.b.body.velocity.x/this.vel,
-            this.b.body.velocity.y/this.vel);
-    },
-    get turnAngle(){
-        var d = this.dir;
-        var v = this.velNorm;
-        var angle;
 
-        if (this.vel>5) {
+};
+Player.prototype.constructor =  function (x,y,game,hull) {
 
-            angle = Math.acos(d.x * v.x + d.y * v.y);
-            if(v.cross(d)<0)
-                angle = -angle;
-            return angle;
+    this.game = game;
+    this.eq ={};
+    this.eq.hull = hull;
+    this.b = this.game.add.sprite(x,y,this.eq.hull.sprite);
+    this.b.anchor.set(0.5);
+    this.b.smoothed=false;
+    this.b.scale.set(2);
+    this.b.smoothed= false;
+
+    this.game.physics.p2.enable(this.b,GLOBAL.IS_DEBUG);
+    this.b.body.damping=this.damping || 0.5;
+    this.b.body.setCircle(this.b.width/3,0,0);
+    this.b.body.setCollisionGroup(this.game.playerColGroup);
+    this.b.body.collides([this.game.spaceBodiesColGroup,this.game.playerColGroup]);
+
+    this.b.parentObject = this;
+    this.b.body.parentObject = this;
+    Object.defineProperty(this, "mass", {
+        get: function() {
+            return this.b.body.mass*1000;
+        },
+
+        set: function(value) {
+
+
+            console.log("setting mass "+this.b.body.mass);
+            console.log("with "+value);
+            this.b.body.mass = Math.abs(value)/1000;
+            console.log("seted"+this.b.body.mass);
+
         }
-        else
-            return 0;
-//        angle(v1, v2) = acos( (v1x * v2x + v1y * v2y) / (sqrt(v1x^2+v1y^2) * sqrt(v2x^2+v2y^2)) )
-
-        // angle = acos(dotProduct(Va.normalize(), Vb.normalize()));
-        // cross = crossProduct(Va, Vb);
-        // if (dotProduct(Vn, cross) < 0) { // Or > 0
-        //     angle = -angle;
-        // }
+    });
+    this.mass = this.eq.hull.mass;
 
 
-    },
+    this.vel = 0;
+    this.oldVel = 0;
+    this._thrustCurrent= 0;
+    Object.defineProperty(this, "velNorm", {
+        get: function() {
+            return new Phaser.Point(
+                this.b.body.velocity.x / this.vel,
+                this.b.body.velocity.y / this.vel);
+        }
+    });
+    Object.defineProperty(this, "turnAngle", {
+        get: function() {
+            var d = this.dir;
+            var v = this.velNorm;
+            var angle;
 
-    constructor: function (x,y,game,hull)  {
+            if (this.vel > 5) {
 
+                angle = Math.acos(d.x * v.x + d.y * v.y);
+                if (v.cross(d) < 0)
+                    angle = -angle;
+                return angle;
+            }
+            else
+                return 0;
+        }
+    });
+    Object.defineProperty(this, "dir", {
+        get: function() {
+            return (new Phaser.Point(Math.sin(this.b.body.rotation), -Math.cos(this.b.body.rotation)));
 
-        this.x=x;
-        this.y = y;
-        this.game = game;
-        this.initHull(hull);
+        }
+    });
+    Object.defineProperty(this, "thrustCurrent", {
+        get: function() {
+            return this._thrustCurrent;
 
+        },
+        set: function (val) {
+            if (val > this.thrustMaximum)
+                val = this.thrustMaximum;
+            if (val < 0)
+                val = 0;
+            console.log("set trust");
+            this._thrustCurrent = val;
+        }
+    });
+    Object.defineProperty(this, "money", {
+        get: function() {
+            if (this._money > 0)
+                return this._money;
+            else
+                return 0;
 
-
-        this.b = this.game.add.sprite(this.x,this.y,this.eq.hull.sprite);
-        this.b.anchor.set(0.5);
-        this.b.animations.add('fly',[0,1,2,3],50,true);
-        this.b.animations.add('stop',[4],5,true);
-        this.b.animations.add('rfly',[5,6,7,8],50,true);
-
-
-
-
-        this.b.scale.set(this.size);
-        this.b.smoothed=false;
-
-        this.b.scale.set(2);
-        this.b.smoothed= false;
-        this.objType= 'player';
-
-
-        this.game.physics.p2.enable(this.b,false);
-        this.b.body.damping=this.damping;
-
-        this.b.body.setCircle(this.b.width/3,0,0);
-        this.b.body.parentObject = this;
-        this.b.parentObject = this;
-
-        this.mass = this.eq.hull.mass;
-
-        this.planetsTotalGravity = new Phaser.Point(0,0);
-        this.knownObjects = [];
-        this.cargoItems = [];
-
-        this.cargoItemsGroup = this.game.add.group();
-        this.installedEquipmentGroup = this.game.add.group();
-        this.cargoItemsGroup.fixedToCamera = true;
-        this.installedEquipmentGroup.fixedToCamera = true;
-        this.b.body.setCollisionGroup(this.game.playerColGroup);
-
-        //this.SetStartEq();
-        this.initSecondaryEngines();
-
-
-       //
-
-        this.money = 40;
-        this.fuel=50;
-        this.initEquipment();
+        },
+        set: function (value) {
+            if (value >= 0)
+                this._money = value;
+        }
+    });
 
 
 
-        return this;
-    },
-    EquipmentFactory: function (eq,pushToCargo) {
+    this.damping = 0;
+    this.b.body.damping = 0.5;
+
+
+
+    this.initHull(hull);
+
+    this.b.animations.add('fly',[0,1,2,3],50,true);
+    this.b.animations.add('stop',[4],5,true);
+    this.b.animations.add('rfly',[5,6,7,8],50,true);
+
+    this.objType= 'player';
+
+
+
+    this.cargoItemsGroup = this.game.add.group();
+    this.installedEquipmentGroup = this.game.add.group();
+    this.cargoItemsGroup.fixedToCamera = true;
+    this.installedEquipmentGroup.fixedToCamera = true;
+
+    this.planetsTotalGravity = new Phaser.Point(0,0);
+    this.knownObjects = [];
+    this.cargoItems = [];
+    //this.SetStartEq();
+    this.initSecondaryEngines();
+
+
+    //
+
+    this.money = 40;
+    this.fuel=50;
+    this.initEquipment();
+
+
+
+    //Ship.prototype.constructor.apply(this,arguments);
+};
+Player.prototype.EquipmentFactory = function (eq,pushToCargo) {
 
         var equipment =
             Object.create(EquipmentObject).constructor(this.b.x, this.b.y, this.game, eq,
@@ -236,8 +263,8 @@ Player = {
                 this.installItem(equipment);
         }
 
-    },
-    SetStartEq: function () {
+    };
+Player.prototype.SetStartEq = function () {
 
         var laser1 = this.EquipmentFactory(Equipment.Weapons.Laser1,false);
         var engine = this.EquipmentFactory(Equipment.Engines.RD300,false);
@@ -250,20 +277,20 @@ Player = {
         this.onItemsChange();
 
 
-    },
-    initHull: function (hull) {
+    };
+Player.prototype.initHull = function (hull) {
         this.eq.hull = hull;
         this.cargoBayCap = hull.space;
         this.name = hull.name;
-    },
+    };
 
-    initEquipment: function () {
+Player.prototype.initEquipment = function () {
         this.eq.engine = null;
 
         this.eq.weapon = null;
         this.eq.grabber = null;
-    },
-    calcEquipmentDependedParams: function () {
+    };
+Player.prototype.calcEquipmentDependedParams = function () {
 
 
         if(this.eq.engine) {
@@ -332,8 +359,8 @@ Player = {
         }
 
 
-    },
-    onItemsChange: function () {
+    };
+Player.prototype.onItemsChange = function () {
         var mass = this.eq.hull.mass;
         var volume = 0;
         var ship = this;
@@ -361,8 +388,8 @@ Player = {
         this.cargoBay = volume;
 
 
-    },
-    initSecondaryEngines: function () {
+    };
+Player.prototype.initSecondaryEngines = function () {
         var sprite = this.eq.hull.secondaryEnginesSprite;
         var engineRotLeft = this.game.add.sprite(0,0,sprite);
         var engineRotRight = this.game.add.sprite(0,0,sprite);
@@ -422,10 +449,10 @@ Player = {
         this.engineMarchRight = engineMarchRight;
         this.engineLeft = engineRotLeft;
         this.engineMarchLeft = engineMarchLeft;
-    },
+    };
 
 
-    update: function () {
+Player.prototype.update = function () {
         this.sin = Math.sin(-this.b.rotation);
         this.cos = Math.cos(this.b.rotation);
 
@@ -448,15 +475,15 @@ Player = {
             this.isThrottlingLeftSide = false;
 
 
-    },
-    putItemToCargo: function (item) {
+    };
+Player.prototype.putItemToCargo = function (item) {
 
         this.cargoItemsGroup.add(item.b);
 
 
 
-    },
-    grabItems: function () {
+    };
+Player.prototype.grabItems = function () {
 
         var grabbedItems = 0;
         for (var i = 0,j=this.itemsToGrabToCargo.length; i<j; i++)
@@ -501,9 +528,9 @@ Player = {
 
 
 
-    },
+    };
 
-    dropItem: function (item) {
+Player.prototype.dropItem = function (item) {
 
         this.cargoItemsGroup.remove(item.b);
         this.installedEquipmentGroup.remove(item.b);
@@ -517,8 +544,8 @@ Player = {
         this.calcEquipmentDependedParams();
 
 
-    },
-    installItem: function (item) {
+    };
+Player.prototype.installItem = function (item) {
         var ship = this;
 
         var status="";
@@ -573,8 +600,8 @@ Player = {
 
 
 
-    },
-    uninstallItem: function (item) {
+    };
+Player.prototype.uninstallItem = function (item) {
         // console.log("initiating uninstall for ", item);
         var ship = this;
         var itemCfg = item.config;
@@ -610,8 +637,8 @@ Player = {
         this.calcEquipmentDependedParams();
 
 
-    },
-    sellMaterials: function () {
+    };
+Player.prototype.sellMaterials = function () {
         if(this.planetLanded!==undefined && this.planetLanded.pricesBuy.rock!==undefined) {
 
 
@@ -638,9 +665,9 @@ Player = {
             //this.game.userInterface.shipMenu.shipCargo.populateGrid(this.cargoItems);
         }
 
-    },
+    };
 
-    sellItem: function (items,price) {
+Player.prototype.sellItem = function (items,price) {
         if (Array.isArray(items))
             for (var i = 0; i<items.length;i++) {
                 this.cargoItemsGroup.remove(items[i]);
@@ -654,8 +681,8 @@ Player = {
         this.money+=price;
         this.onItemsChange();
 
-    },
-    InitShipMenu: function () {
+    };
+Player.prototype.InitShipMenu = function () {
 
 
         this.game.userInterface.shipInterface.shipGrab.events.onInputOut.add(function () {
@@ -670,8 +697,8 @@ Player = {
 
         });
 
-    },
-    createGrabber : function () {
+    };
+Player.prototype.createGrabber  = function () {
 
         if (this.eq.grabber) {
             var grabHL={};
@@ -688,8 +715,8 @@ Player = {
         }
         else console.log("no grabber installd/ init highlight failed");
 
-    },
-    updateItemsToGrab: function (){
+    };
+Player.prototype.updateItemsToGrab = function (){
 
         var itemsToGrab = [];
 
@@ -706,23 +733,23 @@ Player = {
 
         this.itemsToGrabToCargo = itemsToGrab;
 
-    },
-    checkItemIsInNearGrabRange: function (item) {
+    };
+Player.prototype.checkItemIsInNearGrabRange = function (item) {
         //check item is in square
         return (item.b.x < (this.b.x+this.grabRadius) &&
         item.b.x > (this.b.x-this.grabRadius) &&
         item.b.y < (this.b.y+this.grabRadius) &&
         item.b.y > (this.b.y-this.grabRadius));
 
-    },
-    checkItemReadyToGrab: function (item) {
+    };
+Player.prototype.checkItemReadyToGrab = function (item) {
         //check item is in circle
 
         return (((item.b.x-this.b.x)*(item.b.x-this.b.x)+(item.b.y-this.b.y)*(item.b.y-this.b.y))
         < this.grabRadius*this.grabRadius);
 
-    },
-    playAnimations: function () {
+    };
+Player.prototype.playAnimations = function () {
 
 
         if (this.isThrottlingRightSide)
@@ -746,8 +773,8 @@ Player = {
             this.engineMarchLeft.animations.play('stop',true);
         }
 
-    },
-    readKeyboardInput: function () {
+    };
+Player.prototype.readKeyboardInput = function () {
 
         if (this.game.usrKeys.switchFreeFlight.isDown && !this.pressedSwitchFreeflight)
         {
@@ -826,9 +853,9 @@ Player = {
 
 
 
-    },
+    };
 
-    updateWeapon: function () {
+Player.prototype.updateWeapon = function () {
         if(this.eq.weapon!=null) {
 
 
@@ -841,9 +868,8 @@ Player = {
 
             })
         }
-    },
-    checkBulletsForHits: function(gameObjects)
-    {
+    };
+Player.prototype.checkBulletsForHits = function(gameObjects)    {
 
         for (var i = 0,j = this.weapon.bulletsAmountinPool;i<j;i++ ) {
             var b = this.weapon.bullets[i];
@@ -883,8 +909,8 @@ Player = {
         }
 
 
-    },
-    accRotateLeft: function () {
+    };
+Player.prototype.accRotateLeft = function () {
         if(this.eq.engine) {
             if (this.rotationThrustCurrent < this.rotationThrust) {
                 this.rotationThrustCurrent += (this.rotationThrustCurrent + 0.01) / this.rotationThrust * 2 + 1;
@@ -892,8 +918,8 @@ Player = {
 
             this.rotateLeft();
         }
-    },
-    accRotateRight: function () {
+    };
+Player.prototype.accRotateRight = function () {
 
         if(this.eq.engine) {
             if (this.rotationThrustCurrent < this.rotationThrust) {
@@ -901,8 +927,8 @@ Player = {
             }
             this.rotateRight();
         }
-    },
-    rotateRight: function () {
+    };
+Player.prototype.rotateRight = function () {
         if(this.fuel>0 && this.eq.engine) {
             this.b.body.rotateRight(this.rotationThrustCurrent);
             this.engineLeft.animations.play('thrustRotL', 10, true);
@@ -911,8 +937,8 @@ Player = {
             this.isThrottling = true;
         }
 
-    },
-    rotateLeft: function () {
+    };
+Player.prototype.rotateLeft = function () {
         if(this.fuel>0 && this.eq.engine) {
             this.b.body.rotateLeft(this.rotationThrustCurrent);
             this.engineRight.animations.play('thrustRotR', 10, true);
@@ -921,8 +947,8 @@ Player = {
             this.isThrottling = true;
         }
 
-    },
-    forward: function (q = 1,damping = false) {
+    };
+Player.prototype.forward = function (q = 1,damping = false) {
         if(!this.b.exists)
         {
             this.b.exists =true;
@@ -939,6 +965,7 @@ Player = {
             }
             else
             {
+
                 this.b.body.thrust(this.thrustCurrent  * q);
                 this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrent / this.thrustMaximum  * q;
 
@@ -949,8 +976,8 @@ Player = {
             this.b.animations.play('fly', true);
         }
 
-    },
-    backward: function (q = 1,damping = false) {
+    };
+Player.prototype.backward = function (q = 1,damping = false) {
         if(this.fuel>0) {
             if (damping)
             {
@@ -968,9 +995,9 @@ Player = {
 
             this.b.animations.play('rfly', true);
         }
-    },
+    };
 
-    sideThrust: function (q = 1,damping = false) {
+Player.prototype.sideThrust = function (q = 1,damping = false) {
         if(this.fuel>0 && this.eq.engine) {
 
             if (q !== 0){
@@ -1002,8 +1029,8 @@ Player = {
 
         }
 
-    },
-    fillFuel: function () {
+    };
+Player.prototype.fillFuel = function () {
 
         if(this.planetLanded!==undefined && this.planetLanded.pricesSell.fuel) {
 
@@ -1028,15 +1055,15 @@ Player = {
                 this.game.userInterface.pilot.say("Денег нет");
             }
         }
-    },
+    };
 
 
-    controlByMouse: function (pointer) {
+Player.prototype.controlByMouse = function (pointer) {
 
 
-    },
+    };
 
-    updateRelationsToPlanets: function () {
+Player.prototype.updateRelationsToPlanets = function () {
         this.globalStatus = '';
         this.planetsTotalGravity.x = 0;
         this.planetsTotalGravity.y = 0;
@@ -1142,8 +1169,8 @@ Player = {
         this.b.body.force.x = this.planetsTotalGravity.x;
         this.b.body.force.y = this.planetsTotalGravity.y;
 
-    },
-    updateOldValues: function () {
+    };
+Player.prototype.updateOldValues = function () {
         for (var i = this.game.planets.length; i > 0; i--) {
             var planet = this.game.planets[i - 1];
             if (planet.objType === 'planet') {
@@ -1155,13 +1182,13 @@ Player = {
         this.isThrottling=false;
 
 
-    },
-    sqaredDistance : function (x, y) {
+    };
+Player.prototype.sqaredDistance  = function (x, y) {
         var dist = (this.b.x-x)* (this.b.x-x)+ (this.b.y-y)* (this.b.y-y);
         return dist;
 
-    },
-    updateRadar: function (miniMap) {
+    };
+Player.prototype.updateRadar = function (miniMap) {
         this.game.gameObjects.forEach(function (gameObject) {
             if(!this.knownObjects.includes(gameObject) && this.sqaredDistance(gameObject.b.x,gameObject.b.y)<this.radarRadius)
             {
@@ -1170,8 +1197,9 @@ Player = {
 
         });
 
-    },
-    colCallback: function (shipBody,collidedBody) {
+    };
+Player.prototype.colCallback = function (shipBody,collidedBody) {
+
         var pilot =shipBody.parentObject.game.userInterface.pilot;
         if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='planet') {
             shipBody.parentObject.planetLanded = collidedBody.parentObject;
@@ -1206,9 +1234,5 @@ Player = {
             }
         }
 
-    },
+    };
 
-
-    b:{}
-};
-Player.prototype = Object.create(Ship.prototype);

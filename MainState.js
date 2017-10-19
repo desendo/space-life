@@ -113,13 +113,16 @@ SpaceLifeGame.MainState.prototype = {
         planet.b.body.setMaterial(planetMaterial);
         planet2.b.body.setMaterial(planetMaterial);
         var pos = new Phaser.Point(planets[0].x,(planets[0].y-planets[0].b.width*0.56-100));
+       // game.npc =  NPC(pos.x,pos.y-120,game,Equipment.Hulls.Ship0);
+        //game.ship = Object.create(Player).constructor(pos.x,pos.y,game,Equipment.Hulls.Ship1);
+        game.ship = new Player(pos.x,pos.y,game,Equipment.Hulls.Ship1);
 
-        game.ship = Object.create(Player).constructor(pos.x,pos.y,game,Equipment.Hulls.Ship1);
         ship = game.ship;
-        ship.b.body.setMaterial(shipMaterial);
+
+        game.ship.b.body.setMaterial(shipMaterial);
 
 
-        gameObjects.push(ship);
+        gameObjects.push(game.ship);
         gameObjects.push(planet);
         gameObjects.push(planet2);
         var shipPlanetCM = game.physics.p2.createContactMaterial(shipMaterial, planetMaterial);
@@ -175,7 +178,6 @@ SpaceLifeGame.MainState.prototype = {
     },
 
     update: function() {
-
 
 
         planet.updateOrbit();
