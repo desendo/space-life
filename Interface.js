@@ -902,6 +902,12 @@ var Interface = {
                         miniMap.unitDots.drawRect(unitMiniX - 1, unitMiniY + miniMap.localY - 1, 4, 4);
 
                     }
+                    else if (object.objType === 'ship') {
+
+                        miniMap.unitDots.beginFill(mapColorPlayer, 0.5);
+                        miniMap.unitDots.drawRect(unitMiniX - 1, unitMiniY + miniMap.localY - 1, 4, 4);
+
+                    }
 
                     miniMap.unitDots.endFill();
 

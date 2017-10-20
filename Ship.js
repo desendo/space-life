@@ -2,12 +2,11 @@
  * Created by goblino on 13.10.2017.
  */
 
-function Ship (x,y,game,hull)
-    {
-        this.init(x,y,game,hull);
-    }
-Ship.prototype.init =  function (x,y,game,hull) {
+function Ship (x,y,game,hull,colGroup,colGroups) {
 
+    this.init(x,y,game,hull,colGroup,colGroups);
+    }
+Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.game = game;
     this.eq ={};
     this.eq.hull = hull;
@@ -20,7 +19,10 @@ Ship.prototype.init =  function (x,y,game,hull) {
     this.game.physics.p2.enable(this.b,GLOBAL.IS_DEBUG);
     this.b.body.damping=this.damping || 0.5;
     this.b.body.setCircle(this.b.width/3,0,0);
-    this.b.body.setCollisionGroup(this.game.playerColGroup);
+
+    this.b.body.setCollisionGroup(colGroup);
+    if(colGroups!==undefined)
+        this.b.body.collides(colGroups);
 
     this.b.parentObject = this;
     this.b.body.parentObject = this;
@@ -87,6 +89,116 @@ Ship.prototype.init =  function (x,y,game,hull) {
             this._thrustCurrent = val;
         }
     });
+
+
+
+
+    this.damping = 0;
+    this.b.body.damping = this.damping;
+
+
+
+
+    this.b.animations.add('fly',[0,1,2,3],50,true);
+    this.b.animations.add('stop',[4],5,true);
+    this.b.animations.add('rfly',[5,6,7,8],50,true);
+
+    this.objType= 'ship';
+
+
+
+    this.cargoItemsGroup = this.game.add.group();
+    this.installedEquipmentGroup = this.game.add.group();
+    this.cargoItemsGroup.fixedToCamera = true;
+    this.installedEquipmentGroup.fixedToCamera = true;
+
+    this.planetsTotalGravity = new Phaser.Point(0,0);
+    this.knownObjects = [];
+    //this.SetStartEq();
+    this.initSecondaryEngines();
+
+
+    //
+
+
+
+
+    this.b.body.thrust( 100);
+    //Ship.prototype.constructor.apply(this,arguments);
+};
+Ship.prototype.initSecondaryEngines = function () {
+    var sprite = this.eq.hull.secondaryEnginesSprite;
+    var engineRotLeft = this.game.add.sprite(0,0,sprite);
+    var engineRotRight = this.game.add.sprite(0,0,sprite);
+
+    var engineMarchLeft = this.game.add.sprite(0,0,sprite);
+    var engineMarchRight = this.game.add.sprite(0,0,sprite);
+
+    engineRotLeft.anchor.set(0.5);
+    engineRotRight.anchor.set(0.5);
+
+    engineMarchLeft.anchor.set(0.5);
+    engineMarchRight.anchor.set(0.5);
+
+    engineRotRight.animations.add('thrustRotR',[0,1],20,true);
+    engineRotLeft.animations.add('thrustRotL',[3,4],20,true);
+
+    engineMarchRight.animations.add('thrustR',[0,1],10,true);
+    engineMarchLeft.animations.add('thrustL',[3,4],10,true);
+
+    engineRotRight.animations.add('stop',[2],1,true);
+    engineRotLeft.animations.add('stop',[2],1,true);
+
+    engineMarchRight.animations.add('stop',[2],1,true);
+    engineMarchLeft.animations.add('stop',[2],1,true);
+
+    engineRotRight.animations.play('stop',true);
+    engineRotLeft.animations.play('stop',true);
+    engineMarchRight.animations.play('stop',true);
+    engineMarchLeft.animations.play('stop',true);
+
+    this.b.addChild(engineRotLeft);
+    this.b.addChild(engineRotRight);
+    this.b.addChild(engineMarchLeft);
+    this.b.addChild(engineMarchRight);
+
+
+    engineRotLeft.x = -7;
+    engineRotRight.x = 7;
+    engineRotLeft.y = -7;
+    engineRotRight.y = -7;
+    engineRotLeft.angle=20;
+    engineRotRight.angle=-20;
+
+    engineMarchLeft.scale.set(1.2);
+    engineMarchRight.scale.set(1.2);
+    engineMarchRight.smoothed= false;
+    engineMarchLeft.smoothed= false;
+
+    engineMarchLeft.x = -12;
+    engineMarchRight.x = 12;
+    engineMarchLeft.y = 3;
+    engineMarchRight.y = 3;
+    engineMarchLeft.angle=0;
+    engineMarchRight.angle=0;
+
+    this.engineRight = engineRotRight;
+    this.engineMarchRight = engineMarchRight;
+    this.engineLeft = engineRotLeft;
+    this.engineMarchLeft = engineMarchLeft;
+};
+
+
+function NPC (x,y,game,hull,colGroup,colGroups){
+    Ship.apply(this,arguments);
+
+
+}
+NPC.prototype = Object.create(Ship.prototype);
+
+
+function Player(x,y,game,hull,colGroup) {
+    Ship.apply(this,arguments);
     Object.defineProperty(this, "money", {
         get: function() {
             if (this._money > 0)
@@ -100,248 +212,321 @@ Ship.prototype.init =  function (x,y,game,hull) {
                 this._money = value;
         }
     });
-
-
-
-    this.damping = 0;
-    this.b.body.damping = 0.5;
-
-
-
     this.initHull(hull);
-
-    this.b.animations.add('fly',[0,1,2,3],50,true);
-    this.b.animations.add('stop',[4],5,true);
-    this.b.animations.add('rfly',[5,6,7,8],50,true);
-
     this.objType= 'player';
-
-
-
-    this.cargoItemsGroup = this.game.add.group();
-    this.installedEquipmentGroup = this.game.add.group();
-    this.cargoItemsGroup.fixedToCamera = true;
-    this.installedEquipmentGroup.fixedToCamera = true;
-
-    this.planetsTotalGravity = new Phaser.Point(0,0);
-    this.knownObjects = [];
-    this.cargoItems = [];
-    //this.SetStartEq();
-    this.initSecondaryEngines();
-
-
-    //
-
     this.money = 40;
     this.fuel=50;
     this.initEquipment();
 
 
-
-    //Ship.prototype.constructor.apply(this,arguments);
-};
-
-
-
-function Player(x,y,game,hull)
-    {
-        this.init(x,y,game,hull);
-    }
+}
 Player.prototype = Object.create(Ship.prototype);
-Player.prototype = {
-    sin: 0,
-    cos: 0,
-    _money: 0,
-    globalStatus: '',
+Player.prototype.initHull = function (hull) {
+    this.eq.hull = hull;
+    this.cargoBayCap = hull.space;
+    this.name = hull.name;
+};
+Player.prototype.SetStartEq = function () {
+
+    var laser1 = this.EquipmentFactory(Equipment.Weapons.Laser1,false);
+    var engine = this.EquipmentFactory(Equipment.Engines.RD300,false);
+    var grabber = this.EquipmentFactory(Equipment.Grabbers.Grab1,false);
+    var radar = this.EquipmentFactory(Equipment.Radars.Radar1,false);
 
 
-    eq: {
-        engine: null,
-        weapon: null,
-        hull: null,
-        grabber: null,
-        power: null,
-        radar: null
-    },
-
-    isFreeFlight: false,
-    fuelCap: 50,
-    cargoBayCap: 1000,
-    cargoBay: 0,
-    fuel: 0,
-    game: {},
-    isThrottling: false,
-    isLanded: false,
-
-
-    pressedSwitchFreeflight: false,
-
-    colorGrey: "#3C3B40",
-    colorMiddle: "#9D9CA6",
-    colorLight: "#EDECF5",
-    colorFlue: "#0F41A6",
-    colorMetal: "#5283A3",
-
-
-    radarRadius: 9000000,
-    knownObjects: [],
-    grabRadius: 0,
-    vel: 0,
-    oldVel: 0,
-    damping: 0,
-    deltaCross: 0,
-    planetLanded: {},
-    _thrustCurrentDamp: 0,
-    get thrustCurrentDamp() {
-        return this._thrustCurrentDamp;
-    },
-    set thrustCurrentDamp(val) {
-        if (val > this.thrustMaximum)
-            val = this.thrustMaximum;
-        if (val < 0)
-            val = 0;
-
-        this._thrustCurrentDamp = val;
-
-    },
-    _thrustCurrent: 0,
-
+    this.game.userInterface.shipMenu.shipCargo.populateGrid(this.cargoItemsGroup);
+    this.game.userInterface.shipMenu.shipView.updateShipView(this.installedEquipmentGroup);
+    this.onItemsChange();
 
 
 };
-Player.prototype.init =  function (x,y,game,hull) {
 
-    this.game = game;
-    this.eq ={};
-    this.eq.hull = hull;
-    this.b = this.game.add.sprite(x,y,this.eq.hull.sprite);
-    this.b.anchor.set(0.5);
-    this.b.smoothed=false;
-    this.b.scale.set(2);
-    this.b.smoothed= false;
+Player.prototype.initEquipment = function () {
+    this.eq.engine = null;
 
-    this.game.physics.p2.enable(this.b,GLOBAL.IS_DEBUG);
-    this.b.body.damping=this.damping || 0.5;
-    this.b.body.setCircle(this.b.width/3,0,0);
-    this.b.body.setCollisionGroup(this.game.playerColGroup);
+    this.eq.weapon = null;
+    this.eq.grabber = null;
+};
 
-    this.b.parentObject = this;
-    this.b.body.parentObject = this;
-    Object.defineProperty(this, "mass", {
-        get: function() {
-            return this.b.body.mass*1000;
-        },
-
-        set: function(value) {
+Player.prototype.update = function () {
+    this.sin = Math.sin(-this.b.rotation);
+    this.cos = Math.cos(this.b.rotation);
 
 
-            this.b.body.mass = Math.abs(value)/1000;
-            console.log("set mass "+this.b.body.mass);
+    if(this.b.body!==null) {
+        this.vel = Math.sqrt(this.b.body.velocity.x * this.b.body.velocity.x + this.b.body.velocity.y * this.b.body.velocity.y);
 
-        }
-    });
-    this.mass = this.eq.hull.mass;
+        this.acc = Math.round(-(+this.oldVel - +this.vel) * 10) / 10;
 
 
-    this.vel = 0;
-    this.oldVel = 0;
-    this._thrustCurrent= 0;
-    Object.defineProperty(this, "velNorm", {
-        get: function() {
-            return new Phaser.Point(
-                this.b.body.velocity.x / this.vel,
-                this.b.body.velocity.y / this.vel);
-        }
-    });
-    Object.defineProperty(this, "turnAngle", {
-        get: function() {
-            var d = this.dir;
-            var v = this.velNorm;
-            var angle;
+        this.updateItemsToGrab();
 
-            if (this.vel > 5) {
+        this.updateRelationsToPlanets();
+    }
+    this.game.userInterface.shipInterface.shipGrab.enable(this.eq.grabber!==null && this.itemsToGrabToCargo.length > 0);
+    this.game.userInterface.shipInterface.shipFuel.enable(this.isLanded && this.money > 0);
+    this.game.userInterface.shipInterface.shipSell.enable(this.isLanded && this.cargoItemsGroup.children.length > 0);
 
-                angle = Math.acos(d.x * v.x + d.y * v.y);
-                if (v.cross(d) < 0)
-                    angle = -angle;
-                return angle;
+    this.isThrottlingRightSide = false;
+    this.isThrottlingLeftSide = false;
+
+
+};
+Player.prototype.updateWeapon = function () {
+    if(this.eq.weapon!=null) {
+
+
+        this.weapon.fireAngle = 180 * this.b.rotation / Math.PI + 270;
+        this.weapon.fireFrom = new Phaser.Rectangle(this.b.x - this.sin * 25, this.b.y - this.cos * 25, 1, 1);
+        this.weapon.bullets.forEach(function (bullet) {
+
+            bullet.x += bullet.velocityx / 100;
+            bullet.y += bullet.velocityy / 100;
+
+        })
+    }
+};
+Player.prototype.updateRelationsToPlanets = function () {
+    this.globalStatus = '';
+    this.planetsTotalGravity.x = 0;
+    this.planetsTotalGravity.y = 0;
+    for (var i = this.game.planets.length; i > 0; i--) {
+        var planet = this.game.planets[i-1];
+        if (planet.objType === 'planet') {
+
+            var d = this.sqaredDistance(planet.x, planet.y);
+
+
+            if (d <planet.gravDistSquared ) {
+                if(!this.added) {
+
+                    this.added = true;
+
+                }
+                //var cross = -planet.dirToShip.x*this.dir.y -(-1*planet.dirToShip.y)*this.dir.x;
+                // var oldcross = planet.oldDirToShip.x*this.dir.y -(-1*planet.oldDirToShip.y)*this.dir.x;
+                // planet.deltaCross = (oldcross.toFixed(4) - cross.toFixed(4));
+                // this.deltaCross =planet.deltaCross;
+
+                this.globalStatus = "В гравитационном поле планеты " + planet.name;
+
+                // var q = (d +500*planet.b.width) /(planet.size*planet.size *100000);
+                var q = (d +2500*planet.b.width) /(planet.size*planet.size *700000);
+                planet.dirToShip.x = (this.b.x -planet.b.x);
+                planet.dirToShip.y = (this.b.y -planet.b.y);
+                planet.dirToShip.normalize();
+
+                this.planetsTotalGravity.x  += -planet.dirToShip.x /( q)*this.b.body.mass;
+                this.planetsTotalGravity.y  += -planet.dirToShip.y /( q)*this.b.body.mass;
+
+
+                if(d <planet.atmRadiusSquared/2) {
+                    this.globalStatus = "В атмосфере планеты " + planet.name;
+
+                    if (this.standingStillCounter ===undefined) this.standingStillCounter=0;
+
+                    this.standingStill = !this.isThrottling && (Math.abs(this.oldVel-this.vel) <0.05)&&Math.abs(this.acc)<0.1;
+                    if(this.standingStill)
+                    {
+                        this.standingStillCounter++;
+                    }
+                    else if(this.standingStillCounter!=0)
+                    {
+                        this.standingStillCounter=0;
+                    }
+                    this.isLanded =  this.standingStill && this.standingStillCounter >60;
+
+
+
+                    if(this.isLanded) {
+                        this.globalStatus = "На поверхности планеты " + this.planetLanded.name;
+                        this.b.exists= false;
+                        this.b.visible= true;
+                        this.b.alive= true;
+
+                        //this.b.body.removeNextStep = true;
+                        this.game.userInterface.labels.labelSpeed.style.backgroundColor = "transparent";
+                        this.game.userInterface.labels.labelSpeed.style.fill = "#DDD";
+                        this.game.userInterface.labels.labelSpeed.text+=" ";
+
+                    }
+                    else
+                    {
+
+                        this.game.userInterface.labels.labelSpeed.style.backgroundColor = this.vel>15? "#FF3D1B" : "#35ff00";
+                        this.game.userInterface.labels.labelSpeed.style.fill = this.vel>15 ? "black" : "black";
+                    }
+
+
+
+                    this.b.body.damping = 0.7 +this.damping;
+                    this.b.body.angularDamping = 0.7 +this.damping;
+                }
+                else {
+                    this.b.body.damping = this.damping;
+                    this.b.body.angularDamping = this.damping;
+                    this.game.userInterface.labels.labelSpeed.style.backgroundColor = "transparent";
+                    this.game.userInterface.labels.labelSpeed.style.fill = "#DDD";
+
+                }
+
             }
             else
-                return 0;
+            {
+                this.b.body.angularDamping=this.damping;
+                this.b.body.damping=this.damping;
+            }
+
+
+            planet.sqDistToShip = d;
+            planet.shipSameSpeed = planet.sqDistToShipOld ===planet.sqDistToShip;
+            planet.sqDistToShipOld = planet.sqDistToShip;
+
+
         }
-    });
-    Object.defineProperty(this, "dir", {
-        get: function() {
-            return (new Phaser.Point(Math.sin(this.b.body.rotation), -Math.cos(this.b.body.rotation)));
+    }
+
+    this.b.body.force.x = this.planetsTotalGravity.x;
+    this.b.body.force.y = this.planetsTotalGravity.y;
+
+};
+Player.prototype.colCallback = function (shipBody,collidedBody) {
+    console.log("бум");
+    var pilot =shipBody.parentObject.game.userInterface.pilot;
+    if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='planet') {
+        shipBody.parentObject.planetLanded = collidedBody.parentObject;
+        console.log(shipBody.parentObject.oldVel/10+" км/сек");
+        if(shipBody.parentObject.oldVel/10>10) {
+            pilot.hpbar.setHealth(pilot.hpbar.hp - Math.round(shipBody.parentObject.oldVel/25));
+            pilot.updateDamagePicture();
+            pilot.say("боль...");
+        }
+        else if (shipBody.parentObject.oldVel/10>4)
+        {
+            pilot.say("В пределах нормы");
+        }
+        else
+        {
+            pilot.say("Мягкая посадка");
+        }
+    }
+    if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='asteroid') {
+        shipBody.parentObject.planetLanded = collidedBody.parentObject;
+        console.log("астероид "+ shipBody.parentObject.oldVel/10+" км/сек");
+        if(shipBody.parentObject.oldVel/10>10) {
+            pilot.hpbar.setHealth(pilot.hpbar.hp - Math.round(shipBody.parentObject.oldVel/50));
+            pilot.updateDamagePicture();
+            pilot.say("боль");
+            //todo сделать систему повреждения пилота и корабля в зависимости от пилота, корабля, скорости и других параметров
+        }
+        else
+        {
+
+            pilot.say("Трясет");
+        }
+    }
+
+};
+
+Player.prototype.onItemsChange = function () {
+    var mass = this.eq.hull.mass;
+    var volume = 0;
+    var ship = this;
+    this.cargoItemsGroup.forEach(
+        function (item) {
+
+            var m = Math.floor(item.parentObject.mass);
+            var v = Math.floor(item.parentObject.volume);
+
+            mass += m;
+            volume += v;
+
+            //  item.bringToTop();
+        }
+    );
+    this.installedEquipmentGroup.forEach(
+        function (item) {
+            var m = Math.floor(+item.parentObject.mass);
+
+            mass += m;
 
         }
-    });
-    Object.defineProperty(this, "thrustCurrent", {
-        get: function() {
-            return this._thrustCurrent;
+        ,this);
+    this.mass = mass;
+    this.cargoBay = volume;
 
-        },
-        set: function (val) {
-            if (val > this.thrustMaximum)
-                val = this.thrustMaximum;
-            if (val < 0)
-                val = 0;
 
-            this._thrustCurrent = val;
+};
+
+Player.prototype.calcEquipmentDependedParams = function () {
+
+
+    if(this.eq.engine) {
+
+        this.thrustMaximum = this.eq.engine.thrustMax;
+        this.rotationThrust = this.eq.engine.rotationMax;
+        this.thrustCurrent = this.thrustMaximum/2;
+        this.thrustCurrentDamp = this.thrustMaximum/2;
+
+    }
+    else
+    {
+        this.thrustMaximum = 0;
+        this.rotationThrust = 0;
+        this.thrustCurrent = this.thrustMaximum/2;
+        this.thrustCurrentDamp = this.thrustMaximum/2;
+    }
+
+    if(this.eq.weapon) {
+
+        this.weapon = this.weapon || new Alt.Weapon(this.eq.weapon,this.game,this);
+
+    }
+    else {
+
+        if(this.weapon)
+        {
+
+            this.weapon.destruct();
+            this.weapon = null;
+
         }
-    });
-    Object.defineProperty(this, "money", {
-        get: function() {
-            if (this._money > 0)
-                return this._money;
-            else
-                return 0;
 
-        },
-        set: function (value) {
-            if (value >= 0)
-                this._money = value;
-        }
-    });
+    }
 
+    if(this.eq.grabber) {
 
+        this.grabber = this.createGrabber();
+    }
+    else
+    {
+        this.grabber = null;
+        this.grabRadius = 0;
+    }
 
-    this.damping = 0;
-    this.b.body.damping = 0.5;
+    if(this.eq.radar) {
 
+        this.game.userInterface.miniMap.enabled=true;
 
+    }
+    else
+    {
+        this.game.userInterface.miniMap.enabled=false;
+        console.log("radar disabled");
+    }
 
-    this.initHull(hull);
+    if(this.eq.power) {
+        console.log("enabling power");
 
-    this.b.animations.add('fly',[0,1,2,3],50,true);
-    this.b.animations.add('stop',[4],5,true);
-    this.b.animations.add('rfly',[5,6,7,8],50,true);
-
-    this.objType= 'player';
-
-
-
-    this.cargoItemsGroup = this.game.add.group();
-    this.installedEquipmentGroup = this.game.add.group();
-    this.cargoItemsGroup.fixedToCamera = true;
-    this.installedEquipmentGroup.fixedToCamera = true;
-
-    this.planetsTotalGravity = new Phaser.Point(0,0);
-    this.knownObjects = [];
-    this.cargoItems = [];
-    //this.SetStartEq();
-    this.initSecondaryEngines();
+        console.log("power enabled");
+    }
+    else
+    {
+        //this.game.userInterface.miniMap.enabled=false;
+        console.log("power disabled");
+    }
 
 
-    //
-
-    this.money = 40;
-    this.fuel=50;
-    this.initEquipment();
-
-
-
-    //Ship.prototype.constructor.apply(this,arguments);
 };
 Player.prototype.EquipmentFactory = function (eq,pushToCargo) {
 
@@ -356,218 +541,6 @@ Player.prototype.EquipmentFactory = function (eq,pushToCargo) {
             else
                 this.installItem(equipment);
         }
-
-    };
-Player.prototype.SetStartEq = function () {
-
-        var laser1 = this.EquipmentFactory(Equipment.Weapons.Laser1,false);
-        var engine = this.EquipmentFactory(Equipment.Engines.RD300,false);
-        var grabber = this.EquipmentFactory(Equipment.Grabbers.Grab1,false);
-        var radar = this.EquipmentFactory(Equipment.Radars.Radar1,false);
-
-
-        this.game.userInterface.shipMenu.shipCargo.populateGrid(this.cargoItemsGroup);
-        this.game.userInterface.shipMenu.shipView.updateShipView(this.installedEquipmentGroup);
-        this.onItemsChange();
-
-
-    };
-Player.prototype.initHull = function (hull) {
-        this.eq.hull = hull;
-        this.cargoBayCap = hull.space;
-        this.name = hull.name;
-    };
-
-Player.prototype.initEquipment = function () {
-        this.eq.engine = null;
-
-        this.eq.weapon = null;
-        this.eq.grabber = null;
-    };
-Player.prototype.calcEquipmentDependedParams = function () {
-
-
-        if(this.eq.engine) {
-
-            this.thrustMaximum = this.eq.engine.thrustMax;
-            this.rotationThrust = this.eq.engine.rotationMax;
-            this.thrustCurrent = this.thrustMaximum/2;
-            this.thrustCurrentDamp = this.thrustMaximum/2;
-
-        }
-        else
-        {
-            this.thrustMaximum = 0;
-            this.rotationThrust = 0;
-            this.thrustCurrent = this.thrustMaximum/2;
-            this.thrustCurrentDamp = this.thrustMaximum/2;
-        }
-
-        if(this.eq.weapon) {
-
-            this.weapon = this.weapon || new Alt.Weapon(this.eq.weapon,this.game,this);
-
-        }
-        else {
-
-            if(this.weapon)
-            {
-
-                this.weapon.destruct();
-                this.weapon = null;
-
-            }
-
-        }
-
-        if(this.eq.grabber) {
-
-            this.grabber = this.createGrabber();
-        }
-        else
-        {
-            this.grabber = null;
-            this.grabRadius = 0;
-        }
-
-        if(this.eq.radar) {
-
-            this.game.userInterface.miniMap.enabled=true;
-
-        }
-        else
-        {
-            this.game.userInterface.miniMap.enabled=false;
-            console.log("radar disabled");
-        }
-
-        if(this.eq.power) {
-            console.log("enabling power");
-
-            console.log("power enabled");
-        }
-        else
-        {
-            //this.game.userInterface.miniMap.enabled=false;
-            console.log("power disabled");
-        }
-
-
-    };
-Player.prototype.onItemsChange = function () {
-        var mass = this.eq.hull.mass;
-        var volume = 0;
-        var ship = this;
-        this.cargoItemsGroup.forEach(
-            function (item) {
-
-                var m = Math.floor(item.parentObject.mass);
-                var v = Math.floor(item.parentObject.volume);
-
-                mass += m;
-                volume += v;
-
-              //  item.bringToTop();
-            }
-        );
-        this.installedEquipmentGroup.forEach(
-            function (item) {
-                var m = Math.floor(+item.parentObject.mass);
-
-                mass += m;
-
-            }
-        ,this);
-        this.mass = mass;
-        this.cargoBay = volume;
-
-
-    };
-Player.prototype.initSecondaryEngines = function () {
-        var sprite = this.eq.hull.secondaryEnginesSprite;
-        var engineRotLeft = this.game.add.sprite(0,0,sprite);
-        var engineRotRight = this.game.add.sprite(0,0,sprite);
-
-        var engineMarchLeft = this.game.add.sprite(0,0,sprite);
-        var engineMarchRight = this.game.add.sprite(0,0,sprite);
-
-        engineRotLeft.anchor.set(0.5);
-        engineRotRight.anchor.set(0.5);
-
-        engineMarchLeft.anchor.set(0.5);
-        engineMarchRight.anchor.set(0.5);
-
-        engineRotRight.animations.add('thrustRotR',[0,1],20,true);
-        engineRotLeft.animations.add('thrustRotL',[3,4],20,true);
-
-        engineMarchRight.animations.add('thrustR',[0,1],10,true);
-        engineMarchLeft.animations.add('thrustL',[3,4],10,true);
-
-        engineRotRight.animations.add('stop',[2],1,true);
-        engineRotLeft.animations.add('stop',[2],1,true);
-
-        engineMarchRight.animations.add('stop',[2],1,true);
-        engineMarchLeft.animations.add('stop',[2],1,true);
-
-        engineRotRight.animations.play('stop',true);
-        engineRotLeft.animations.play('stop',true);
-        engineMarchRight.animations.play('stop',true);
-        engineMarchLeft.animations.play('stop',true);
-
-        this.b.addChild(engineRotLeft);
-        this.b.addChild(engineRotRight);
-        this.b.addChild(engineMarchLeft);
-        this.b.addChild(engineMarchRight);
-
-
-        engineRotLeft.x = -7;
-        engineRotRight.x = 7;
-        engineRotLeft.y = -7;
-        engineRotRight.y = -7;
-        engineRotLeft.angle=20;
-        engineRotRight.angle=-20;
-
-        engineMarchLeft.scale.set(1.2);
-        engineMarchRight.scale.set(1.2);
-        engineMarchRight.smoothed= false;
-        engineMarchLeft.smoothed= false;
-
-        engineMarchLeft.x = -12;
-        engineMarchRight.x = 12;
-        engineMarchLeft.y = 3;
-        engineMarchRight.y = 3;
-        engineMarchLeft.angle=0;
-        engineMarchRight.angle=0;
-
-        this.engineRight = engineRotRight;
-        this.engineMarchRight = engineMarchRight;
-        this.engineLeft = engineRotLeft;
-        this.engineMarchLeft = engineMarchLeft;
-    };
-
-
-Player.prototype.update = function () {
-        this.sin = Math.sin(-this.b.rotation);
-        this.cos = Math.cos(this.b.rotation);
-
-
-        if(this.b.body!==null) {
-            this.vel = Math.sqrt(this.b.body.velocity.x * this.b.body.velocity.x + this.b.body.velocity.y * this.b.body.velocity.y);
-
-            this.acc = Math.round(-(+this.oldVel - +this.vel) * 10) / 10;
-
-
-            this.updateItemsToGrab();
-
-            this.updateRelationsToPlanets();
-        }
-            this.game.userInterface.shipInterface.shipGrab.enable(this.eq.grabber!==null && this.itemsToGrabToCargo.length > 0);
-            this.game.userInterface.shipInterface.shipFuel.enable(this.isLanded && this.money > 0);
-            this.game.userInterface.shipInterface.shipSell.enable(this.isLanded && this.cargoItemsGroup.children.length > 0);
-
-            this.isThrottlingRightSide = false;
-            this.isThrottlingLeftSide = false;
-
 
     };
 Player.prototype.putItemToCargo = function (item) {
@@ -623,7 +596,6 @@ Player.prototype.grabItems = function () {
 
 
     };
-
 Player.prototype.dropItem = function (item) {
 
         this.cargoItemsGroup.remove(item.b);
@@ -639,6 +611,7 @@ Player.prototype.dropItem = function (item) {
 
 
     };
+
 Player.prototype.installItem = function (item) {
         var ship = this;
 
@@ -760,7 +733,6 @@ Player.prototype.sellMaterials = function () {
         }
 
     };
-
 Player.prototype.sellItem = function (items,price) {
         if (Array.isArray(items))
             for (var i = 0; i<items.length;i++) {
@@ -948,21 +920,6 @@ Player.prototype.readKeyboardInput = function () {
 
 
     };
-
-Player.prototype.updateWeapon = function () {
-        if(this.eq.weapon!=null) {
-
-
-            this.weapon.fireAngle = 180 * this.b.rotation / Math.PI + 270;
-            this.weapon.fireFrom = new Phaser.Rectangle(this.b.x - this.sin * 25, this.b.y - this.cos * 25, 1, 1);
-            this.weapon.bullets.forEach(function (bullet) {
-
-                bullet.x += bullet.velocityx / 100;
-                bullet.y += bullet.velocityy / 100;
-
-            })
-        }
-    };
 Player.prototype.checkBulletsForHits = function(gameObjects)    {
 
         for (var i = 0,j = this.weapon.bulletsAmountinPool;i<j;i++ ) {
@@ -1090,7 +1047,6 @@ Player.prototype.backward = function (q = 1,damping = false) {
             this.b.animations.play('rfly', true);
         }
     };
-
 Player.prototype.sideThrust = function (q = 1,damping = false) {
         if(this.fuel>0 && this.eq.engine) {
 
@@ -1150,118 +1106,8 @@ Player.prototype.fillFuel = function () {
             }
         }
     };
-
-
 Player.prototype.controlByMouse = function (pointer) {
 
-
-    };
-
-Player.prototype.updateRelationsToPlanets = function () {
-        this.globalStatus = '';
-        this.planetsTotalGravity.x = 0;
-        this.planetsTotalGravity.y = 0;
-        for (var i = this.game.planets.length; i > 0; i--) {
-            var planet = this.game.planets[i-1];
-            if (planet.objType === 'planet') {
-
-                var d = this.sqaredDistance(planet.x, planet.y);
-
-
-                if (d <planet.gravDistSquared ) {
-                    if(!this.added) {
-
-                        //planet.orbit.add(this.b);
-
-
-
-                        this.added = true;
-                        //this.game.world.addChild(planet.b);
-                    }
-                    //var cross = -planet.dirToShip.x*this.dir.y -(-1*planet.dirToShip.y)*this.dir.x;
-                    // var oldcross = planet.oldDirToShip.x*this.dir.y -(-1*planet.oldDirToShip.y)*this.dir.x;
-                    // planet.deltaCross = (oldcross.toFixed(4) - cross.toFixed(4));
-                    // this.deltaCross =planet.deltaCross;
-
-                    this.globalStatus = "В гравитационном поле планеты " + planet.name;
-
-                    var q = (d +2500*planet.b.width) /(planet.size*planet.size *700000);
-                    planet.dirToShip.x = (this.b.x -planet.b.x);
-                    planet.dirToShip.y = (this.b.y -planet.b.y);
-                    planet.dirToShip.normalize();
-
-                    this.planetsTotalGravity.x  += -planet.dirToShip.x /( q)*this.b.body.mass;
-                    this.planetsTotalGravity.y  += -planet.dirToShip.y /( q)*this.b.body.mass;
-
-
-                    if(d <planet.atmRadiusSquared/2) {
-                        this.globalStatus = "В атмосфере планеты " + planet.name;
-
-                        if (this.standingStillCounter ===undefined) this.standingStillCounter=0;
-
-                        this.standingStill = !this.isThrottling && (Math.abs(this.oldVel-this.vel) <0.05)&&Math.abs(this.acc)<0.1;
-                        if(this.standingStill)
-                        {
-                            this.standingStillCounter++;
-                        }
-                        else if(this.standingStillCounter!=0)
-                        {
-                            this.standingStillCounter=0;
-                        }
-                        this.isLanded =  this.standingStill && this.standingStillCounter >60;
-
-
-
-                        if(this.isLanded) {
-                            this.globalStatus = "На поверхности планеты " + this.planetLanded.name;
-                            this.b.exists= false;
-                            this.b.visible= true;
-                            this.b.alive= true;
-
-                            //this.b.body.removeNextStep = true;
-                            this.game.userInterface.labels.labelSpeed.style.backgroundColor = "transparent";
-                            this.game.userInterface.labels.labelSpeed.style.fill = "#DDD";
-                            this.game.userInterface.labels.labelSpeed.text+=" ";
-
-                        }
-                        else
-                        {
-
-                            this.game.userInterface.labels.labelSpeed.style.backgroundColor = this.vel>15? "#FF3D1B" : "#35ff00";
-                            this.game.userInterface.labels.labelSpeed.style.fill = this.vel>15 ? "black" : "black";
-                        }
-
-
-
-                        this.b.body.damping = 0.7 +this.damping;
-                        this.b.body.angularDamping = 0.7 +this.damping;
-                    }
-                    else {
-                        this.b.body.damping = this.damping;
-                        this.b.body.angularDamping = this.damping;
-                        this.game.userInterface.labels.labelSpeed.style.backgroundColor = "transparent";
-                        this.game.userInterface.labels.labelSpeed.style.fill = "#DDD";
-
-                    }
-
-                }
-                else
-                {
-                    this.b.body.angularDamping=this.damping;
-                    this.b.body.damping=this.damping;
-                }
-
-
-                planet.sqDistToShip = d;
-                planet.shipSameSpeed = planet.sqDistToShipOld ===planet.sqDistToShip;
-                planet.sqDistToShipOld = planet.sqDistToShip;
-
-
-            }
-        }
-
-        this.b.body.force.x = this.planetsTotalGravity.x;
-        this.b.body.force.y = this.planetsTotalGravity.y;
 
     };
 Player.prototype.updateOldValues = function () {
@@ -1283,50 +1129,13 @@ Player.prototype.sqaredDistance  = function (x, y) {
 
     };
 Player.prototype.updateRadar = function (miniMap) {
-        this.game.gameObjects.forEach(function (gameObject) {
-            if(!this.knownObjects.includes(gameObject) && this.sqaredDistance(gameObject.b.x,gameObject.b.y)<this.radarRadius)
-            {
-                this.knownObjects.push(gameObject);
-            }
-
-        });
-
-    };
-Player.prototype.colCallback = function (shipBody,collidedBody) {
-console.log("бум");
-        var pilot =shipBody.parentObject.game.userInterface.pilot;
-        if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='planet') {
-            shipBody.parentObject.planetLanded = collidedBody.parentObject;
-            console.log(shipBody.parentObject.oldVel/10+" км/сек");
-            if(shipBody.parentObject.oldVel/10>10) {
-                pilot.hpbar.setHealth(pilot.hpbar.hp - Math.round(shipBody.parentObject.oldVel/25));
-                pilot.updateDamagePicture();
-                pilot.say("боль...");
-            }
-            else if (shipBody.parentObject.oldVel/10>4)
-            {
-                pilot.say("В пределах нормы");
-            }
-            else
-            {
-                pilot.say("Мягкая посадка");
-            }
-        }
-        if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='asteroid') {
-            shipBody.parentObject.planetLanded = collidedBody.parentObject;
-            console.log("астероид "+ shipBody.parentObject.oldVel/10+" км/сек");
-            if(shipBody.parentObject.oldVel/10>10) {
-                pilot.hpbar.setHealth(pilot.hpbar.hp - Math.round(shipBody.parentObject.oldVel/50));
-                pilot.updateDamagePicture();
-                pilot.say("боль");
-                //todo сделать систему повреждения пилота и корабля в зависимости от пилота, корабля, скорости и других параметров
-            }
-            else
-            {
-
-                pilot.say("Трясет");
-            }
+    this.game.gameObjects.forEach(function (gameObject) {
+        if(!this.knownObjects.includes(gameObject) && this.sqaredDistance(gameObject.b.x,gameObject.b.y)<this.radarRadius)
+        {
+            this.knownObjects.push(gameObject);
         }
 
-    };
+    });
+
+};
 

@@ -149,8 +149,7 @@ var Planet = {
         this.game.physics.p2.enable(this.b, false);
 
         this.b.body.setCircle(this.b.width/2*1);
-        this.b.body.kinematic = true;
-        //this.b.body.velocity.x=12;
+        this.b.body.static = true;
 
         this.b.body.setCollisionGroup(colGroup);
         this.b.body.collides(colGroups);

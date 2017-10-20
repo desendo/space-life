@@ -36,7 +36,6 @@
 
     var playerColGroup ;
     var spaceBodiesColGroup;
-    var bulletsColGroup;
 
     var starsBackground;
 
@@ -76,7 +75,6 @@ SpaceLifeGame.MainState.prototype = {
         this.game.pickableItems = pickableItems;
 
         this.game.playerColGroup = playerColGroup;
-        this.game.bulletsColGroup = bulletsColGroup;
         this.game.spaceBodiesColGroup = spaceBodiesColGroup;
         this.game.userInterface = userInterface;
 
@@ -113,23 +111,30 @@ SpaceLifeGame.MainState.prototype = {
         planet.b.body.setMaterial(planetMaterial);
         planet2.b.body.setMaterial(planetMaterial);
         var pos = new Phaser.Point(planets[0].x,(planets[0].y-planets[0].b.width*0.56-100));
-       // game.npc =  NPC(pos.x,pos.y-120,game,Equipment.Hulls.Ship0);
-        //game.ship = Object.create(Player).constructor(pos.x,pos.y,game,Equipment.Hulls.Ship1);
-        ship = new Player(pos.x,pos.y,game,Equipment.Hulls.Ship1);
+
+
+        ship = new Player(pos.x,pos.y,game,Equipment.Hulls.Ship1,game.playerColGroup);
+
+        game.npc1 = new NPC(pos.x-40,pos.y-60,game,Equipment.Hulls.Ship0,game.spaceBodiesColGroup,[game.spaceBodiesColGroup,game.playerColGroup]);
+        game.npc2 = new NPC(pos.x+30,pos.y-40,game,Equipment.Hulls.Ship0,game.spaceBodiesColGroup,[game.spaceBodiesColGroup,game.playerColGroup]);
         console.log(ship);
 
         game.ship = ship;
 
         game.ship.b.body.setMaterial(shipMaterial);
 
-        ship.b.body.collides(game.spaceBodiesColGroup,ship.colCallback,this);
+         ship.b.body.collides(game.spaceBodiesColGroup,ship.colCallback,this);
+        //ship.b.body.collides(game.shipsColGroup,function () {console.log("reerr");},this);
+
 
         gameObjects.push(game.ship);
+        gameObjects.push(game.npc1);
+        gameObjects.push(game.npc2);
         gameObjects.push(planet);
         gameObjects.push(planet2);
-        var shipPlanetCM = game.physics.p2.createContactMaterial(shipMaterial, planetMaterial);
-        shipPlanetCM.restitution = 0.0;
-        shipPlanetCM.friction = 100.0;
+        //var shipPlanetCM = game.physics.p2.createContactMaterial(shipMaterial, planetMaterial);
+        //shipPlanetCM.restitution = 0.0;
+        //shipPlanetCM.friction = 100.0;
 
         this.createCameraFadeOut();
 
