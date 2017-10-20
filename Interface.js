@@ -583,9 +583,9 @@ var Interface = {
         labels.labelMass.text = "Масса: "+ ship.mass+"t";
         labels.labelCargo.text = "Грузовой отсек: "+ ship.cargoBay+"/"+ship.cargoBayCap;
 
-        labels.labelDamping.text = (ship.b.body.damping==0 || ship.vel<1) ? "" : "аэродин.торм.: "+ ship.b.body.damping.toFixed(1) ;
-        labels.labelDamping.style.backgroundColor = "#ff9300";
-        labels.labelDamping.style.fill = "#030329";
+        // labels.labelDamping.text = (ship.b.body.damping==0 || ship.vel<1) ? "" : "аэродин.торм.: "+ ship.b.body.damping.toFixed(1) ;
+        // labels.labelDamping.style.backgroundColor = "#ff9300";
+        // labels.labelDamping.style.fill = "#030329";
 
 
         var detail = 10;
@@ -899,6 +899,12 @@ var Interface = {
                     else if (object.objType === 'player') {
 
                         miniMap.unitDots.beginFill(mapColorPlayer, 1);
+                        miniMap.unitDots.drawRect(unitMiniX - 1, unitMiniY + miniMap.localY - 1, 4, 4);
+
+                    }
+                    else if (object.objType === 'ship') {
+
+                        miniMap.unitDots.beginFill(mapColorPlayer, 0.5);
                         miniMap.unitDots.drawRect(unitMiniX - 1, unitMiniY + miniMap.localY - 1, 4, 4);
 
                     }

@@ -24,6 +24,8 @@
             this.load.image('background_intro', assets+'background_intro.png');
 
             this.load.spritesheet('ship1',assets+'sprite_ship1.png',32,32,9,0,0);
+            this.load.spritesheet('ship0',assets+'ship0.png',32,32,4,0,0);
+
             this.load.spritesheet('grahem',assets+'grahem4.png',32,32,4,0,0);
             this.load.spritesheet('grahemdamages',assets+'grahemdamages.png',32,32,6,0,0);
             this.load.spritesheet('shipButton',assets+'shipButtons.png',48,16,16,0,0);

@@ -17,7 +17,7 @@ Materials =
     };
 
 
-var PickableObject =
+var Item =
     {
         constructor: function (x,y,game,config,colGroup,colGroups) {
 
@@ -74,24 +74,24 @@ var PickableObject =
           this.info.mass = this.mass ||this.config.mass ;
           this.info.summary = this.info.title+"\n"+this.info.volume+"куб.м.\n"+this.info.mass + "т.";
 
-        },
+        }
     };
 
-var Material = Object.create(PickableObject);
+var Material = Object.create(Item);
 Material.constructor = function (x,y,game,config,colGroup,colGroups,volume) {
     this.material = config;
     this.volume = volume || 10;
     this.mass = this.material.density/10 * this.volume;
-    PickableObject.constructor.apply(this,arguments);
+    Item.constructor.apply(this,arguments);
 
     return this;
 };
-var EquipmentObject = Object.create(PickableObject);
+var EquipmentObject = Object.create(Item);
 EquipmentObject.constructor = function (x, y, game, config, colGroup, colGroups)
 {   this.size = 1;
     this.equipment = config;
     this.mass = config.mass;
     this.volume = config.volume || 10;
-    PickableObject.constructor.apply(this,arguments);
+    Item.constructor.apply(this,arguments);
     return this;
 };
