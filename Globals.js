@@ -3,6 +3,7 @@
  */
 var GLOBAL = GLOBAL || {};
 GLOBAL.IS_DEBUG = false;
+GLOBAL.SPEED = 55;
 
 var assets = 'assets/';
 var colorGrey =  "#3C3B40";

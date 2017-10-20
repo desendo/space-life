@@ -31,9 +31,8 @@ Alt.Bullet = function (game, x, y, key, frame,origin,weapon) {
 
         this.angle= origin.b.body.angle +90;
 
-
-        this.velocityx=-this.weapon.bulletSpeed*origin.sin+origin.b.body.velocity.x;
-        this.velocityy=-this.weapon.bulletSpeed*origin.cos+origin.b.body.velocity.y;
+        this.velocityx=-this.weapon.bulletSpeed*origin.sin/ 100+origin.b.body.velocity.x/GLOBAL.SPEED;
+        this.velocityy=-this.weapon.bulletSpeed*origin.cos/ 100+origin.b.body.velocity.y/GLOBAL.SPEED;
 
 
         this.visible=true;
@@ -168,11 +167,18 @@ var Planet = {
         this.labelPos.y = -this.size;
         this.atm = this.createAtmosphere();
         this.atmRadiusSquared = this.atmRadius*this.atmRadius;
+        this.orbit = this.game.add.group(this.game.world);
+        console.log(this.orbit);
+        console.log(this.orbit.centerX,this.orbit.centerY);
+        this.orbit.centerX=x;
+
+        this.orbit.centerY=y;
+        console.log(this.orbit.centerX,this.orbit.centerY);
         return this;
     },
     updateOrbit: function()
     {
-        //this.orbit.rotation+=0.000001;
+        this.orbit.rotation+=0.000001;
        // this.b.body.reset(this.b.x,this.b.y);
 
     },

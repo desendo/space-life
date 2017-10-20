@@ -35,7 +35,7 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
 
 
             this.b.body.mass = Math.abs(value)/1000;
-            console.log("set mass "+this.b.body.mass);
+
 
         }
     });
@@ -89,6 +89,20 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
             this._thrustCurrent = val;
         }
     });
+    Object.defineProperty(this, "thrustCurrentDamp", {
+        get: function() {
+            return this._thrustCurrentDamp||0;
+
+        },
+        set: function (val) {
+            if (val > this.thrustMaximum)
+                val = this.thrustMaximum;
+            if (val < 0)
+                val = 0;
+
+            this._thrustCurrentDamp = val;
+        }
+    });
 
 
 
@@ -117,13 +131,6 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     //this.SetStartEq();
     this.initSecondaryEngines();
 
-
-    //
-
-
-
-
-    this.b.body.thrust( 100);
     //Ship.prototype.constructor.apply(this,arguments);
 };
 Ship.prototype.initSecondaryEngines = function () {
@@ -191,8 +198,6 @@ Ship.prototype.initSecondaryEngines = function () {
 
 function NPC (x,y,game,hull,colGroup,colGroups){
     Ship.apply(this,arguments);
-
-
 }
 NPC.prototype = Object.create(Ship.prototype);
 
@@ -216,7 +221,7 @@ function Player(x,y,game,hull,colGroup) {
     this.objType= 'player';
     this.money = 40;
     this.fuel=50;
-    this.initEquipment();
+
 
 
 }
@@ -241,12 +246,6 @@ Player.prototype.SetStartEq = function () {
 
 };
 
-Player.prototype.initEquipment = function () {
-    this.eq.engine = null;
-
-    this.eq.weapon = null;
-    this.eq.grabber = null;
-};
 
 Player.prototype.update = function () {
     this.sin = Math.sin(-this.b.rotation);
@@ -280,8 +279,8 @@ Player.prototype.updateWeapon = function () {
         this.weapon.fireFrom = new Phaser.Rectangle(this.b.x - this.sin * 25, this.b.y - this.cos * 25, 1, 1);
         this.weapon.bullets.forEach(function (bullet) {
 
-            bullet.x += bullet.velocityx / 100;
-            bullet.y += bullet.velocityy / 100;
+            bullet.x += bullet.velocityx ;
+            bullet.y += bullet.velocityy ;
 
         })
     }
@@ -299,8 +298,10 @@ Player.prototype.updateRelationsToPlanets = function () {
 
             if (d <planet.gravDistSquared ) {
                 if(!this.added) {
+                    if(this.isLanded) {
 
-                    this.added = true;
+                        this.added = true;
+                    }
 
                 }
                 //var cross = -planet.dirToShip.x*this.dir.y -(-1*planet.dirToShip.y)*this.dir.x;
@@ -340,11 +341,20 @@ Player.prototype.updateRelationsToPlanets = function () {
 
                     if(this.isLanded) {
                         this.globalStatus = "На поверхности планеты " + this.planetLanded.name;
+
                         this.b.exists= false;
                         this.b.visible= true;
                         this.b.alive= true;
 
-                        //this.b.body.removeNextStep = true;
+                        this.planetLanded.orbit.addChild(this.b);
+                        this.b.reset(0,-500);
+
+                        this.b.body.removeNextStep = true;
+
+                        this.b.exists= false;
+                        this.b.visible= true;
+                        this.b.alive= true;
+                        //this.planetLanded.orbit.bringToTop();
                         this.game.userInterface.labels.labelSpeed.style.backgroundColor = "transparent";
                         this.game.userInterface.labels.labelSpeed.style.fill = "#DDD";
                         this.game.userInterface.labels.labelSpeed.text+=" ";
@@ -465,12 +475,14 @@ Player.prototype.calcEquipmentDependedParams = function () {
 
         this.thrustMaximum = this.eq.engine.thrustMax;
         this.rotationThrust = this.eq.engine.rotationMax;
-        this.thrustCurrent = this.thrustMaximum/2;
-        this.thrustCurrentDamp = this.thrustMaximum/2;
+        this.thrustCurrent = (this.thrustCurrentOld<this.thrustMaximum ? this.thrustCurrentOld : this.thrustMaximum )|| this.thrustMaximum*1;
+        this.thrustCurrentDamp = (this.thrustCurrentDampOld<this.thrustMaximum ? this.thrustCurrentDampOld: this.thrustMaximum )|| this.thrustMaximum*1;
 
     }
     else
     {
+        this.thrustCurrentOld = this.thrustCurrent;
+        this.thrustCurrentDampOld = this.thrustCurrentDamp;
         this.thrustMaximum = 0;
         this.rotationThrust = 0;
         this.thrustCurrent = this.thrustMaximum/2;
@@ -557,7 +569,7 @@ Player.prototype.grabItems = function () {
         {
             if((this.cargoBay + this.itemsToGrabToCargo[i].volume)<this.cargoBayCap)
             {
-                console.log(this.itemsToGrabToCargo[i].volume);
+
 
                 var m = ~~this.itemsToGrabToCargo[i].mass;
 

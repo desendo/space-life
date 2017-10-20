@@ -110,14 +110,13 @@ SpaceLifeGame.MainState.prototype = {
         this.game.planets.push(planet2);
         planet.b.body.setMaterial(planetMaterial);
         planet2.b.body.setMaterial(planetMaterial);
-        var pos = new Phaser.Point(planets[0].x,(planets[0].y-planets[0].b.width*0.56-100));
+        var pos = new Phaser.Point(planets[0].x,(planets[0].y-planets[0].b.width*0.56-300));
 
 
         ship = new Player(pos.x,pos.y,game,Equipment.Hulls.Ship1,game.playerColGroup);
 
         game.npc1 = new NPC(pos.x-40,pos.y-60,game,Equipment.Hulls.Ship0,game.spaceBodiesColGroup,[game.spaceBodiesColGroup,game.playerColGroup]);
         game.npc2 = new NPC(pos.x+30,pos.y-40,game,Equipment.Hulls.Ship0,game.spaceBodiesColGroup,[game.spaceBodiesColGroup,game.playerColGroup]);
-        console.log(ship);
 
         game.ship = ship;
 
