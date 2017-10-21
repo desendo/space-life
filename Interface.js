@@ -28,11 +28,11 @@ var Interface = {
         this.bg = gr.generateTexture();
         gr.destroy();
         mouseTooltip.back = this.game.add.sprite(0,0,this.bg);
-        mouseTooltip.back.anchor.set(0,1);
+        mouseTooltip.back.anchor.set(0);
         mouseTooltip.tip = this.game.add.text(0,0," ",tooltip );
-        mouseTooltip.tip.setTextBounds(10, -20, 150, 70);
+        mouseTooltip.tip.setTextBounds(3, 3, 250, 64);
         mouseTooltip.tip.lineSpacing = -5;
-        mouseTooltip.tip.anchor.set(0,1);
+        mouseTooltip.tip.anchor.set(0);
 
         mouseTooltip.aboveItem = function () {
 
@@ -46,8 +46,8 @@ var Interface = {
                 mouseTooltip.tip.bringToTop();
                 mouseTooltip.tip.text = arguments.info.summary;
 
-                mouseTooltip.tip.x = this.game.input.x ;
-                mouseTooltip.back.x = this.game.input.x;
+                mouseTooltip.tip.x = this.game.input.x+30 ;
+                mouseTooltip.back.x = this.game.input.x+30;
                 mouseTooltip.tip.y = this.game.input.y ;
                 mouseTooltip.back.y = this.game.input.y ;
 

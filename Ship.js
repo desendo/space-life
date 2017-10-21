@@ -1,11 +1,58 @@
 /**
  * Created by goblino on 13.10.2017.
  */
+var MiniHud = function (obj) {
+    this.init(obj);
+    this.addHealthBar();
+
+};
+
+
+MiniHud.prototype = {};
+MiniHud.prototype.addHealthBar = function () {
+
+};
+MiniHud.prototype.init = function (obj) {
+    this.game = obj.game || obj.b.game;
+
+
+    if (obj instanceof Phaser.Sprite)
+        this.par = obj;
+    else if (obj.b instanceof Phaser.Sprite)
+        this.par = obj.b;
+    else
+        console.log("obj of minihud is not valid. has to be ")
+    this.hud = this.game.add.group(this.game.world);
+
+    if (this.par.body!==undefined)
+        this.attachedToBody = true;
+
+    this.game = obj.game || this.par.game || game;
+
+    this.hud.pivot.x = this.par.x||0;
+    this.hud.pivot.y = this.par.y||0;
+    this.hud.position.x = this.par.x||0;
+    this.hud.position.y = this.par.y||0;
+};
+MiniHud.prototype.updatePosition = function () {
+    if(this.attachedToBody) {
+        this.hud.x = this.par.x + this.offsetY+ this.par.body.velocity.x / 60;
+        this.hud.y = this.par.y + this.offsetY+ this.par.body.velocity.y / 60;
+    }
+    else
+    {
+        this.hud.x = this.par.b.x + this.offsetY;
+        this.hud.y = this.par.b.y + this.offsetY ;
+    }
+};
 
 function Ship (x,y,game,hull,colGroup,colGroups) {
 
     this.init(x,y,game,hull,colGroup,colGroups);
     }
+Ship.prototype.update = function () {
+this.miniHud.updatePosition();
+};
 Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.game = game;
     this.eq ={};
@@ -13,14 +60,11 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
 
     this.health =this.eq.hull.mass;
 
-
-
-
     this.b = this.game.add.sprite(x,y,this.eq.hull.sprite);
     this.b.anchor.set(0.5);
     this.b.smoothed=false;
-    this.b.scale.set(2);
-    this.b.smoothed= false;
+    this.b.scale.set(this.eq.hull.scale || 2);
+
 
     this.game.physics.p2.enable(this.b,GLOBAL.IS_DEBUG);
     this.b.body.damping=this.damping || 0.5;
@@ -136,8 +180,12 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.knownObjects = [];
     //this.SetStartEq();
     this.initSecondaryEngines();
-
+    this.addMiniHud(1);
     //Ship.prototype.constructor.apply(this,arguments);
+};
+Ship.prototype.addMiniHud = function (level) {
+  this.miniHud = new MiniHud(this,level);
+  console.log(this.miniHud);
 };
 Ship.prototype.initSecondaryEngines = function () {
     console.log("init sec eng",this.b.key);
@@ -435,6 +483,7 @@ function NPC (x,y,game,hull,colGroup,colGroups){
 }
 NPC.prototype = Object.create(Ship.prototype);
 NPC.prototype.update = function () {
+    Ship.prototype.update.apply(this);
     this.sin = Math.sin(-this.b.rotation);
     this.cos = Math.cos(this.b.rotation);
     this.forward();
@@ -488,6 +537,8 @@ Player.prototype.SetStartEq = function () {
 
 
 Player.prototype.update = function () {
+    Ship.prototype.update.apply(this);
+
     this.sin = Math.sin(-this.b.rotation);
     this.cos = Math.cos(this.b.rotation);
 
@@ -1141,7 +1192,7 @@ Player.prototype.controlByMouse = function (pointer) {
 
 
     };
-Player.prototype.updateOldValues = function () {
+Player.prototype.postUpdate = function () {
         for (var i = this.game.planets.length; i > 0; i--) {
             var planet = this.game.planets[i - 1];
             if (planet.objType === 'planet') {
