@@ -104,8 +104,8 @@ SpaceLifeGame.MainState.prototype = {
         createGameCollisionGroups();
 
 
-        planet = Object.create(Planet).constructor(worldSize/2,worldSize/2,18,'planet',1500,'Земля 2',game.spaceBodiesColGroup,[game.spaceBodiesColGroup,game.playerColGroup],game);
-        planet2 = Object.create(Planet).constructor(worldSize/2-2000,worldSize/2+4000,12,'planet',900,'Земля 3',game.spaceBodiesColGroup,[game.spaceBodiesColGroup,game.playerColGroup],game);
+        planet = new Planet(worldSize/2,worldSize/2,18,'planet',1500,'Земля 2',game.spaceBodiesColGroup,[game.spaceBodiesColGroup,game.playerColGroup],game);
+        planet2 = new Planet(worldSize/2-2000,worldSize/2+4000,12,'planet',900,'Земля 3',game.spaceBodiesColGroup,[game.spaceBodiesColGroup,game.playerColGroup],game);
         this.game.planets.push(planet);
         this.game.planets.push(planet2);
         planet.b.body.setMaterial(planetMaterial);
@@ -183,14 +183,15 @@ SpaceLifeGame.MainState.prototype = {
         gr.destroy();
     },
 
+
     update: function() {
 
 
-        planet.updateOrbit();
+
         this.optimizeRendering();
 
         ship.playAnimations();
-        ship.update();
+
         ship.readKeyboardInput();
         ship.updateRelationsToPlanets();
 
@@ -198,9 +199,9 @@ SpaceLifeGame.MainState.prototype = {
             ship.updateWeapon();
             ship.checkBulletsForHits(gameObjects);
         }
-        ship.updateOldValues();
+        ship.postUpdate();
 
-
+        this.gameObjectsUpdate();
         game.userInterface.updateLabels(game);
         this.readKeys();
         this.game.isGameOver = game.userInterface.pilot.hpbar.hp<=0;
@@ -330,6 +331,14 @@ SpaceLifeGame.MainState.prototype = {
         this.game.debug.text(SpaceLifeGame.version+" " +" fps: "+this.game.time.fps , 2, 14, "#c8ff00");
 
 
+    },
+    gameObjectsUpdate: function()
+    {
+        for (var i= 0,j =gameObjects.length; i<j;i++ )
+        {
+            if(gameObjects[i].update !== undefined)
+                gameObjects[i].update();
+        }
     }
 
 };

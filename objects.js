@@ -1,4 +1,56 @@
+//game.enemies = new EnemyGroup(planets[0].x,(planets[0].y-planets[0].b.width*0.56-500),300,0,0.05,true,game);
 
+EnemyGroup = function(positionX, positionY, radius, angle, rotateSpeed, clockwise,game) {
+
+    Phaser.Group.call(this, game);
+    this.position = {x:positionX, y:positionY};
+    this.radius   = radius;
+    this.pivot.x  = positionX;
+    this.pivot.y  = positionY;
+    this.angle    = angle;
+
+    this.rotateSpeed = rotateSpeed;
+    this.clockwise   = clockwise;
+
+    this.addChild(new Enemy(this.position, this.radius, 0.4,game));
+    this.addChild(new Enemy(this.position, this.radius, 0.4,game));
+    this.addChild(new Enemy(this.position, this.radius, 0.4,game));
+    this.addChild(new Enemy(this.position, this.radius, 0.4,game));
+
+    this.update = function(){
+    this.children.forEach(function (ch) {
+        ch.update();
+    })
+
+    }
+};
+
+EnemyGroup.prototype = Object.create(Phaser.Group.prototype);
+EnemyGroup.prototype.constructor = EnemyGroup;
+
+
+Enemy = function(position, radius, scale,game) {
+
+    Phaser.Sprite.call(this, game, position.x, position.y, 'ship1');
+    game.physics.p2.enable(this, true);
+    this.body.setCircle(7);
+    this.scale.setTo(scale);
+    this.anchor.setTo(0.5);
+    this.body.setCollisionGroup(game.spaceBodiesColGroup);
+    this.body.static = true;
+    this.body.collides(game.playerColGroup);
+    this.radius = radius;
+    this.angle = 10;
+    game.add.existing(this);
+
+    this.update = function(){
+
+
+    }
+};
+
+Enemy.prototype = Object.create(Phaser.Sprite.prototype);
+Enemy.prototype.constructor = Enemy;
 
 
 var Alt = Alt || {};
@@ -101,110 +153,98 @@ Alt.Weapon.prototype.destruct = function () {
 
 };
 
-var Planet = {
-    pricesSell:{},
-    pricesBuy:{},
-    dirToShip:{},
-    oldDirToShip: {},
 
-    deltaDir: function () {
+var Planet = function (x,y,size,sprite,gravityDistance,name="Земля 2",colGroup,colGroups,game) {
+  this.init(x,y,size,sprite,gravityDistance,name="Земля 2",colGroup,colGroups,game);
+};
+Planet.prototype.init = function (x,y,size,sprite,gravityDistance,name="Земля 2",colGroup,colGroups,game) {
+    this.pricesSell={};
+    this.pricesBuy={};
+    this.dirToShip={};
+    this.oldDirToShip= {};
+    this.x=x;
+    this.y = y;
+    this.dirToShip = new Phaser.Point(0,0);
+    this.name = name;
+    this.game = game;
+    this.oldDirToShip = new Phaser.Point(0,0);
 
-        return new Phaser.Point(this.deltaDir.x-this.oldDirToShip.x,this.deltaDir.y-this.oldDirToShip.y);
-    },
 
 
-    constructor: function (x,y,size,sprite,gravityDistance,name="Земля 2",colGroup,colGroups,game)
+    this.size = size;
+    this.sprite = sprite;
+    this.gravDist = gravityDistance;
+
+    var image = game.cache.getImage(sprite);
+    var atmRadius = image.width*size;
+
+    this.b = this.game.add.sprite(this.x,this.y,this.sprite);
+    this.gr = this.game.add.graphics(0,0);
+    this.gr.beginFill('0xFFFFFF',0.08);
+    this.gr.drawCircle(x,y,this.gravDist*2);
+    this.gr.endFill();
+
+    this.gravDistSquared = (gravityDistance)*(gravityDistance);
+
+    this.b.scale.set(this.size);
+
+
+    this.b.smoothed=false;
+    this.b.anchor.set(0.5);
+    this.objType = 'planet';
+    this.game.physics.p2.enable(this.b, false);
+
+    this.b.body.setCircle(this.b.width/2*1);
+    this.b.body.static = true;
+
+    this.b.body.setCollisionGroup(colGroup);
+    this.b.body.collides(colGroups);
+    this.b.body.parentObject = this;
+    this.b.parentObject = this;
+
+    this.pricesSell.fuel=10;
+    this.pricesBuy.rock=0.7;
+
+
+    this.labelPos = this.game.add.text(0, 0, this.name, { font: "30px Roboto mono", fill: "#ffffff" });
+    this.labelPos.scale.set(1/this.size);
+
+
+    this.labelPos.x = 0;
+    this.labelPos.y = -this.size;
+    this.atm = this.createAtmosphere();
+    this.atmRadiusSquared = this.atmRadius*this.atmRadius;
+    this.orbit = this.game.add.group(this.game.world);
+    console.log(this.orbit);
+    console.log(this.orbit.centerX,this.orbit.centerY);
+    this.orbit.centerX=x;
+
+    this.orbit.centerY=y;
+    console.log(this.orbit.centerX,this.orbit.centerY);
+};
+Planet.prototype.deltaDir = function () {
+    return new Phaser.Point(this.deltaDir.x-this.oldDirToShip.x,this.deltaDir.y-this.oldDirToShip.y);
+
+};
+Planet.prototype.createAtmosphere = function (atmRadius) {
+    var atm = {};
+    if (atmRadius===undefined)
     {
-        this.x=x;
-        this.y = y;
-        this.dirToShip = new Phaser.Point(0,0);
-        this.name = name;
-        this.game = game;
-        this.oldDirToShip = new Phaser.Point(0,0);
-
-
-
-        this.size = size;
-        this.sprite = sprite;
-        this.gravDist = gravityDistance;
-
-        var image = game.cache.getImage(sprite);
-        var atmRadius = image.width*size;
-
-        this.b = this.game.add.sprite(this.x,this.y,this.sprite);
-        this.gr = this.game.add.graphics(0,0);
-        this.gr.beginFill('0xFFFFFF',0.08);
-        this.gr.drawCircle(x,y,this.gravDist*2);
-        this.gr.endFill();
-
-        this.gravDistSquared = (gravityDistance)*(gravityDistance);
-
-        this.b.scale.set(this.size);
-
-
-        this.b.smoothed=false;
-        this.b.anchor.set(0.5);
-        this.objType = 'planet';
-        this.game.physics.p2.enable(this.b, false);
-
-        this.b.body.setCircle(this.b.width/2*1);
-        this.b.body.static = true;
-
-        this.b.body.setCollisionGroup(colGroup);
-        this.b.body.collides(colGroups);
-        this.b.body.parentObject = this;
-        this.b.parentObject = this;
-
-        this.pricesSell.fuel=10;
-        this.pricesBuy.rock=0.7;
-
-
-        this.labelPos = this.game.add.text(0, 0, this.name, { font: "30px Roboto mono", fill: "#ffffff" });
-        this.labelPos.scale.set(1/this.size);
-
-
-        this.labelPos.x = 0;
-        this.labelPos.y = -this.size;
-        this.atm = this.createAtmosphere();
-        this.atmRadiusSquared = this.atmRadius*this.atmRadius;
-        this.orbit = this.game.add.group(this.game.world);
-        console.log(this.orbit);
-        console.log(this.orbit.centerX,this.orbit.centerY);
-        this.orbit.centerX=x;
-
-        this.orbit.centerY=y;
-        console.log(this.orbit.centerX,this.orbit.centerY);
-        return this;
-    },
-    updateOrbit: function()
-    {
-        this.orbit.rotation+=0.000001;
-       // this.b.body.reset(this.b.x,this.b.y);
-
-    },
-    createAtmosphere : function (atmRadius) {
-        var atm = {};
-        if (atmRadius===undefined)
-        {
-            this.atmRadius = this.b.width*1.2;
-            atmRadius= this.b.width*1.2;
-        }
-        else
-            this.atmRadius = atmRadius;
-        atm = this.game.add.graphics();
-        var color = "0x"+"#9499fe".slice(1, 7);
-        atm.beginFill(color,0.08);
-        var k = 1.4;
-        atm.drawCircle(this.x,this.y,atmRadius*k  );
-        atm.drawCircle(this.x,this.y,atmRadius*k*0.9  );
-        atm.drawCircle(this.x,this.y,atmRadius*k*0.8  );
-        atm.drawCircle(this.x,this.y,atmRadius*k*0.7  );
-        atm.endFill();
-        return atm;
-    },
-
-
-
+        this.atmRadius = this.b.width*1.2;
+        atmRadius= this.b.width*1.2;
+    }
+    else
+        this.atmRadius = atmRadius;
+    atm = this.game.add.graphics();
+    var color = "0x"+"#9499fe".slice(1, 7);
+    atm.beginFill(color,0.08);
+    var k = 1.4;
+    atm.drawCircle(this.x,this.y,atmRadius*k  );
+    atm.drawCircle(this.x,this.y,atmRadius*k*0.9  );
+    atm.drawCircle(this.x,this.y,atmRadius*k*0.8  );
+    atm.drawCircle(this.x,this.y,atmRadius*k*0.7  );
+    atm.endFill();
+    return atm;
 };
 
 
