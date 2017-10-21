@@ -20,34 +20,52 @@ var Interface = {
         this.game = parent.game;
 
         var mouseTooltip = {};
-        mouseTooltip.tip = this.game.add.text(0,0,"dsa",tooltip );
+        var gr = this.game.add.graphics(0,0);
+        gr.lineStyle(2,"0x0F41A6");
+        gr.beginFill("0x5283A3");
+        gr.drawRect(0,0,250,70);
+        gr.endFill();
+        this.bg = gr.generateTexture();
+        gr.destroy();
+        mouseTooltip.back = this.game.add.sprite(0,0,this.bg);
+        mouseTooltip.back.anchor.set(0,1);
+        mouseTooltip.tip = this.game.add.text(0,0," ",tooltip );
+        mouseTooltip.tip.setTextBounds(10, -20, 150, 70);
+        mouseTooltip.tip.lineSpacing = -5;
         mouseTooltip.tip.anchor.set(0,1);
 
         mouseTooltip.aboveItem = function () {
 
             if(!this.b.exists) {
 
-                this.game.time.events.add(500, function (arguments) {
+                this.game.time.events.add(1000, function (arguments) {
                     console.log("above 500");
+                mouseTooltip.back.visible =true;
+                mouseTooltip.back.bringToTop();
                 mouseTooltip.tip.visible = true;
                 mouseTooltip.tip.bringToTop();
                 mouseTooltip.tip.text = arguments.info.summary;
 
-                mouseTooltip.tip.x = this.game.input.x +20;
+                mouseTooltip.tip.x = this.game.input.x ;
+                mouseTooltip.back.x = this.game.input.x;
                 mouseTooltip.tip.y = this.game.input.y ;
+                mouseTooltip.back.y = this.game.input.y ;
 
                 mouseTooltip.tip.fixedToCamera = true;
+                mouseTooltip.back.fixedToCamera = true;
                 },this,this);
             }
         };
         mouseTooltip.outOfItem = function () {
             this.game.time.events.removeAll();
             mouseTooltip.tip.fixedToCamera = false;
+            mouseTooltip.back.fixedToCamera = false;
             mouseTooltip.tip.text="";
             mouseTooltip.tip.visible = false;
+            mouseTooltip.back.visible = false;
         };
         mouseTooltip.clickToItem = function () {
-            console.log(arguments[0]);
+
             this.game.time.events.removeAll();
             mouseTooltip.tip.fixedToCamera = false;
             mouseTooltip.tip.text="";
@@ -259,6 +277,7 @@ var Interface = {
 
             item.b.input.enableSnap(cellW, cellH, false, true, Math.floor(-cellW / 2 -10), Math.floor(-cellH / 2 +10));
             item.b.events.onDragStop.add(zones.shipCargo.onDragItemStop, zones.shipCargo.sprite);
+
             item.b.events.onDragStart.add(function () {
 
                 arguments[0].parentObject.originZone = zones.data.detectZone(arguments[0]);

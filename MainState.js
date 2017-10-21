@@ -185,7 +185,7 @@ SpaceLifeGame.MainState.prototype = {
 
     update: function() {
 
-
+        game.npc1.update();
         planet.updateOrbit();
         this.optimizeRendering();
 

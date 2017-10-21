@@ -10,6 +10,12 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.game = game;
     this.eq ={};
     this.eq.hull = hull;
+
+    this.health =this.eq.hull.mass;
+
+
+
+
     this.b = this.game.add.sprite(x,y,this.eq.hull.sprite);
     this.b.anchor.set(0.5);
     this.b.smoothed=false;
@@ -134,6 +140,7 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     //Ship.prototype.constructor.apply(this,arguments);
 };
 Ship.prototype.initSecondaryEngines = function () {
+    console.log("init sec eng",this.b.key);
     var sprite = this.eq.hull.secondaryEnginesSprite;
     var engineRotLeft = this.game.add.sprite(0,0,sprite);
     var engineRotRight = this.game.add.sprite(0,0,sprite);
@@ -194,12 +201,245 @@ Ship.prototype.initSecondaryEngines = function () {
     this.engineLeft = engineRotLeft;
     this.engineMarchLeft = engineMarchLeft;
 };
+Ship.prototype.playAnimations = function () {
 
+
+    if (this.isThrottlingRightSide)
+    {
+        this.engineMarchRight.animations.play('thrustR', 20, true);
+
+    }
+    else
+        this.engineMarchRight.animations.play('stop',true);
+    if (this.isThrottlingLeftSide)
+    {
+        this.engineMarchLeft.animations.play('thrustL', 20, true);
+
+    }
+    else
+        this.engineMarchLeft.animations.play('stop',true);
+
+    if(this.fuel<=0) {
+        this.b.animations.play('stop', true);
+        this.engineMarchRight.animations.play('stop',true);
+        this.engineMarchLeft.animations.play('stop',true);
+    }
+
+};
+Ship.prototype.accRotateLeft = function () {
+    if(this.eq.engine) {
+        if (this.rotationThrustCurrent < this.rotationThrust) {
+            this.rotationThrustCurrent += (this.rotationThrustCurrent + 0.01) / this.rotationThrust * 2 + 1;
+        }
+
+        this.rotateLeft();
+    }
+};
+Ship.prototype.accRotateRight = function () {
+
+    if(this.eq.engine) {
+        if (this.rotationThrustCurrent < this.rotationThrust) {
+            this.rotationThrustCurrent += (this.rotationThrustCurrent + 0.01) / this.rotationThrust * 2 + 1;
+        }
+        this.rotateRight();
+    }
+};
+Ship.prototype.rotateRight = function () {
+    if(this.fuel>0 && this.eq.engine) {
+        this.b.body.rotateRight(this.rotationThrustCurrent);
+        this.engineLeft.animations.play('thrustRotL', 10, true);
+
+        this.fuel -= this.eq.engine.rotationFuelConsumption * this.rotationThrustCurrent / this.rotationThrust;
+        this.isThrottling = true;
+    }
+
+};
+Ship.prototype.rotateLeft = function () {
+    if(this.fuel>0 && this.eq.engine) {
+        this.b.body.rotateLeft(this.rotationThrustCurrent);
+        this.engineRight.animations.play('thrustRotR', 10, true);
+
+        this.fuel -= this.eq.engine.rotationFuelConsumption * this.rotationThrustCurrent / this.rotationThrust;
+        this.isThrottling = true;
+    }
+
+};
+Ship.prototype.forward = function (q = 1,damping = false) {
+
+    if(!this.b.exists)
+    {
+        this.b.exists =true;
+        this.b.alive =true;
+        this.b.visible =true;
+    }
+    if(this.fuel>0) {
+
+        if (damping)
+        {
+            this.b.body.thrust(this.thrustCurrentDamp  * q);
+            this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrentDamp / this.thrustMaximum  * q;
+
+        }
+        else
+        {
+
+            this.b.body.thrust(this.thrustCurrent  * q);
+            this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrent / this.thrustMaximum  * q;
+
+        }
+
+        this.isThrottling = true;
+
+        this.b.animations.play('fly', true);
+    }
+
+};
+Ship.prototype.backward = function (q = 1,damping = false) {
+    if(this.fuel>0) {
+        if (damping)
+        {
+            this.b.body.reverse(this.thrustCurrentDamp / 2 * q);
+            this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrentDamp / this.thrustMaximum / 2 * q;
+
+        }
+        else
+        {
+            this.b.body.reverse(this.thrustCurrent / 2 * q);
+            this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrent / this.thrustMaximum / 2 * q;
+
+        }
+        this.isThrottling = true;
+
+        this.b.animations.play('rfly', true);
+    }
+};
+Ship.prototype.sideThrust = function (q = 1,damping = false) {
+    if(this.fuel>0 && this.eq.engine) {
+
+        if (q !== 0){
+            if (damping) {
+                this.b.body.thrustLeft(this.thrustCurrentDamp * q/2);
+                this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrentDamp / this.thrustMaximum  * q/2;
+            }
+            else {
+                this.b.body.thrustLeft(this.thrustCurrent * q/2);
+                this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrent / this.thrustMaximum  * q/2;
+
+
+            }
+            if (q > 0)
+                this.isThrottlingRightSide = true;
+
+            else if (q < 0)
+                this.isThrottlingLeftSide = true;
+
+            this.isThrottling = true;
+        }
+        else
+        {
+            this.isThrottlingLeftSide = false;
+            this.isThrottlingRightSide = false;
+        }
+
+
+
+    }
+
+};
+Ship.prototype.calcEquipmentDependedParams = function () {
+
+
+    if(this.eq.engine) {
+
+        this.thrustMaximum = this.eq.engine.thrustMax;
+        this.rotationThrust = this.eq.engine.rotationMax;
+        this.thrustCurrent = (this.thrustCurrentOld<this.thrustMaximum ? this.thrustCurrentOld : this.thrustMaximum )|| this.thrustMaximum*1;
+        this.thrustCurrentDamp = (this.thrustCurrentDampOld<this.thrustMaximum ? this.thrustCurrentDampOld: this.thrustMaximum )|| this.thrustMaximum*1;
+
+    }
+    else
+    {
+        this.thrustCurrentOld = this.thrustCurrent;
+        this.thrustCurrentDampOld = this.thrustCurrentDamp;
+        this.thrustMaximum = 0;
+        this.rotationThrust = 0;
+        this.thrustCurrent = this.thrustMaximum/2;
+        this.thrustCurrentDamp = this.thrustMaximum/2;
+    }
+
+    if(this.eq.weapon) {
+
+        this.weapon = this.weapon || new Alt.Weapon(this.eq.weapon,this.game,this);
+
+    }
+    else {
+
+        if(this.weapon)
+        {
+
+            this.weapon.destruct();
+            this.weapon = null;
+
+        }
+
+    }
+
+    if(this.eq.grabber) {
+
+        this.grabber = this.createGrabber();
+    }
+    else
+    {
+        this.grabber = null;
+        this.grabRadius = 0;
+    }
+
+    if(this.eq.radar) {
+
+        if( this instanceof Player)
+            this.game.userInterface.miniMap.enabled=true;
+    }
+    else
+    {
+        if( this instanceof Player) {
+            this.game.userInterface.miniMap.enabled = false;
+            console.log("radar disabled");
+        }
+    }
+
+    if(this.eq.power) {
+        console.log("enabling power");
+
+        console.log("power enabled");
+    }
+    else
+    {
+        //this.game.userInterface.miniMap.enabled=false;
+        console.log("power disabled");
+    }
+
+
+};
 
 function NPC (x,y,game,hull,colGroup,colGroups){
     Ship.apply(this,arguments);
+    this.eq.engine = Equipment.Engines.RD300;
+    this.calcEquipmentDependedParams();
+    this.fuel = 10;
+    this.thrustCurrent = 30;
+
+    this.forward();
+    this.sideThrust();
+    console.log(this.mass);
+
 }
 NPC.prototype = Object.create(Ship.prototype);
+NPC.prototype.update = function () {
+    this.sin = Math.sin(-this.b.rotation);
+    this.cos = Math.cos(this.b.rotation);
+    this.forward();
+
+};
 
 
 function Player(x,y,game,hull,colGroup) {
@@ -461,78 +701,6 @@ Player.prototype.onItemsChange = function () {
 
 };
 
-Player.prototype.calcEquipmentDependedParams = function () {
-
-
-    if(this.eq.engine) {
-
-        this.thrustMaximum = this.eq.engine.thrustMax;
-        this.rotationThrust = this.eq.engine.rotationMax;
-        this.thrustCurrent = (this.thrustCurrentOld<this.thrustMaximum ? this.thrustCurrentOld : this.thrustMaximum )|| this.thrustMaximum*1;
-        this.thrustCurrentDamp = (this.thrustCurrentDampOld<this.thrustMaximum ? this.thrustCurrentDampOld: this.thrustMaximum )|| this.thrustMaximum*1;
-
-    }
-    else
-    {
-        this.thrustCurrentOld = this.thrustCurrent;
-        this.thrustCurrentDampOld = this.thrustCurrentDamp;
-        this.thrustMaximum = 0;
-        this.rotationThrust = 0;
-        this.thrustCurrent = this.thrustMaximum/2;
-        this.thrustCurrentDamp = this.thrustMaximum/2;
-    }
-
-    if(this.eq.weapon) {
-
-        this.weapon = this.weapon || new Alt.Weapon(this.eq.weapon,this.game,this);
-
-    }
-    else {
-
-        if(this.weapon)
-        {
-
-            this.weapon.destruct();
-            this.weapon = null;
-
-        }
-
-    }
-
-    if(this.eq.grabber) {
-
-        this.grabber = this.createGrabber();
-    }
-    else
-    {
-        this.grabber = null;
-        this.grabRadius = 0;
-    }
-
-    if(this.eq.radar) {
-
-        this.game.userInterface.miniMap.enabled=true;
-
-    }
-    else
-    {
-        this.game.userInterface.miniMap.enabled=false;
-        console.log("radar disabled");
-    }
-
-    if(this.eq.power) {
-        console.log("enabling power");
-
-        console.log("power enabled");
-    }
-    else
-    {
-        //this.game.userInterface.miniMap.enabled=false;
-        console.log("power disabled");
-    }
-
-
-};
 Player.prototype.EquipmentFactory = function (eq,pushToCargo) {
 
         var equipment =
@@ -611,6 +779,7 @@ Player.prototype.dropItem = function (item) {
         item.b.reset(this.b.x,this.b.y+5);
         item.b.scale.set(item.originalSize);
         item.b.sendToBack();
+
         this.onItemsChange();
         this.calcEquipmentDependedParams();
 
@@ -820,271 +989,7 @@ Player.prototype.checkItemReadyToGrab = function (item) {
         < this.grabRadius*this.grabRadius);
 
     };
-Player.prototype.playAnimations = function () {
 
-
-        if (this.isThrottlingRightSide)
-        {
-            this.engineMarchRight.animations.play('thrustR', 20, true);
-
-        }
-        else
-            this.engineMarchRight.animations.play('stop',true);
-        if (this.isThrottlingLeftSide)
-        {
-            this.engineMarchLeft.animations.play('thrustL', 20, true);
-
-        }
-        else
-            this.engineMarchLeft.animations.play('stop',true);
-
-        if(this.fuel<=0) {
-            this.b.animations.play('stop', true);
-            this.engineMarchRight.animations.play('stop',true);
-            this.engineMarchLeft.animations.play('stop',true);
-        }
-
-    };
-Player.prototype.readKeyboardInput = function () {
-
-        if (this.game.usrKeys.switchFreeFlight.isDown && !this.pressedSwitchFreeflight)
-        {
-            this.isFreeFlight =!this.isFreeFlight;
-            this.pressedSwitchFreeflight = true;
-
-        }
-        if (!this.game.usrKeys.switchFreeFlight.isDown)
-        {
-            this.pressedSwitchFreeflight = false;
-        }
-
-        if (this.game.usrKeys.fireButton.isDown)
-        {
-
-            if(this.eq.weapon) {
-                this.weapon.fire();
-            }
-
-        }
-        if (this.game.usrKeys.grabButton.isDown)
-        {
-            this.grabItems();
-
-        }
-        if (this.game.usrKeys.dropButton.isDown)
-        {
-            console.log(this.eq);
-        }
-
-        if (this.game.usrKeys.openShipMenuKey.isDown)
-        {
-
-
-        }
-
-        if (this.game.usrKeys.openShipMenuKey.isDown && !this.pressedopenShipMenuKey)
-        {
-            this.game.userInterface.OpenShipMenu();
-            this.pressedopenShipMenuKey = true;
-
-        }
-        if (!this.game.usrKeys.openShipMenuKey.isDown)
-        {
-            this.pressedopenShipMenuKey = false;
-        }
-        if (this.game.usrKeys.engineMinusKey.isDown)
-        {
-            if(this.thrustCurrent>0)
-                this.thrustCurrent--;
-        }
-        else if (this.game.usrKeys.enginePlusKey.isDown)
-        {
-            if(this.thrustCurrent<this.thrustMaximum)
-                this.thrustCurrent++;
-
-        }
-
-
-        if (this.game.usrKeys.engineDampMinusKey.isDown)
-        {
-            if(this.thrustCurrentDamp>0)
-                this.thrustCurrentDamp--;
-
-        }
-        else if (this.game.usrKeys.engineDampPlusKey.isDown)
-        {
-            if(this.thrustCurrentDamp<this.thrustMaximum)
-                this.thrustCurrentDamp++;
-
-        }
-
-
-
-
-
-
-
-    };
-Player.prototype.checkBulletsForHits = function(gameObjects)    {
-
-        for (var i = 0,j = this.weapon.bulletsAmountinPool;i<j;i++ ) {
-            var b = this.weapon.bullets[i];
-            if(b.visible)
-            {
-                gameObjects.forEach(function (gameObject) {
-
-
-                    if (gameObject.b.body !== null) {
-
-                        if (b.armed
-                            && Phaser.Rectangle.intersects(gameObject.b.getBounds(),
-                                b.getBounds())) {
-
-                            if (gameObject.objType === 'asteroid') {
-
-                                if(((gameObject.b.x - b.x)*(gameObject.b.x - b.x)+(gameObject.b.y - b.y)*(gameObject.b.y - b.y)) < gameObject.squaredRadius) {
-
-                                    gameObject.getDamage(b.weapon);
-
-                                    if(gameObject.b.game!=null && gameObject.b.game.effectsEnabled) {
-                                        gameObject.b.game.damageEmiter.x = b.x;
-                                        gameObject.b.game.damageEmiter.y = b.y;
-                                        gameObject.b.game.damageEmiter.start(true, 500, null, 5);
-                                    }
-                                    b.init();
-                                    if (gameObject.health < 0) {
-                                        gameObject = {};
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                })
-            }
-        }
-
-
-    };
-Player.prototype.accRotateLeft = function () {
-        if(this.eq.engine) {
-            if (this.rotationThrustCurrent < this.rotationThrust) {
-                this.rotationThrustCurrent += (this.rotationThrustCurrent + 0.01) / this.rotationThrust * 2 + 1;
-            }
-
-            this.rotateLeft();
-        }
-    };
-Player.prototype.accRotateRight = function () {
-
-        if(this.eq.engine) {
-            if (this.rotationThrustCurrent < this.rotationThrust) {
-                this.rotationThrustCurrent += (this.rotationThrustCurrent + 0.01) / this.rotationThrust * 2 + 1;
-            }
-            this.rotateRight();
-        }
-    };
-Player.prototype.rotateRight = function () {
-        if(this.fuel>0 && this.eq.engine) {
-            this.b.body.rotateRight(this.rotationThrustCurrent);
-            this.engineLeft.animations.play('thrustRotL', 10, true);
-
-            this.fuel -= this.eq.engine.rotationFuelConsumption * this.rotationThrustCurrent / this.rotationThrust;
-            this.isThrottling = true;
-        }
-
-    };
-Player.prototype.rotateLeft = function () {
-        if(this.fuel>0 && this.eq.engine) {
-            this.b.body.rotateLeft(this.rotationThrustCurrent);
-            this.engineRight.animations.play('thrustRotR', 10, true);
-
-            this.fuel -= this.eq.engine.rotationFuelConsumption * this.rotationThrustCurrent / this.rotationThrust;
-            this.isThrottling = true;
-        }
-
-    };
-Player.prototype.forward = function (q = 1,damping = false) {
-        if(!this.b.exists)
-        {
-            this.b.exists =true;
-            this.b.alive =true;
-            this.b.visible =true;
-        }
-        if(this.fuel>0) {
-
-            if (damping)
-            {
-                this.b.body.thrust(this.thrustCurrentDamp  * q);
-                this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrentDamp / this.thrustMaximum  * q;
-
-            }
-            else
-            {
-
-                this.b.body.thrust(this.thrustCurrent  * q);
-                this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrent / this.thrustMaximum  * q;
-
-            }
-
-            this.isThrottling = true;
-
-            this.b.animations.play('fly', true);
-        }
-
-    };
-Player.prototype.backward = function (q = 1,damping = false) {
-        if(this.fuel>0) {
-            if (damping)
-            {
-                this.b.body.reverse(this.thrustCurrentDamp / 2 * q);
-                this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrentDamp / this.thrustMaximum / 2 * q;
-
-            }
-            else
-            {
-                this.b.body.reverse(this.thrustCurrent / 2 * q);
-                this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrent / this.thrustMaximum / 2 * q;
-
-            }
-            this.isThrottling = true;
-
-            this.b.animations.play('rfly', true);
-        }
-    };
-Player.prototype.sideThrust = function (q = 1,damping = false) {
-        if(this.fuel>0 && this.eq.engine) {
-
-            if (q !== 0){
-                if (damping) {
-                    this.b.body.thrustLeft(this.thrustCurrentDamp * q/2);
-                    this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrentDamp / this.thrustMaximum  * q/2;
-                }
-                else {
-                    this.b.body.thrustLeft(this.thrustCurrent * q/2);
-                    this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrent / this.thrustMaximum  * q/2;
-
-
-                }
-                if (q > 0)
-                    this.isThrottlingRightSide = true;
-
-                else if (q < 0)
-                    this.isThrottlingLeftSide = true;
-
-                this.isThrottling = true;
-            }
-            else
-            {
-                this.isThrottlingLeftSide = false;
-                this.isThrottlingRightSide = false;
-            }
-
-
-
-        }
-
-    };
 Player.prototype.fillFuel = function () {
 
         if(this.planetLanded!==undefined && this.planetLanded.pricesSell.fuel) {
@@ -1111,6 +1016,127 @@ Player.prototype.fillFuel = function () {
             }
         }
     };
+Player.prototype.readKeyboardInput = function () {
+
+    if (this.game.usrKeys.switchFreeFlight.isDown && !this.pressedSwitchFreeflight)
+    {
+        this.isFreeFlight =!this.isFreeFlight;
+        this.pressedSwitchFreeflight = true;
+
+    }
+    if (!this.game.usrKeys.switchFreeFlight.isDown)
+    {
+        this.pressedSwitchFreeflight = false;
+    }
+
+    if (this.game.usrKeys.fireButton.isDown)
+    {
+
+        if(this.eq.weapon) {
+            this.weapon.fire();
+        }
+
+    }
+    if (this.game.usrKeys.grabButton.isDown)
+    {
+        this.grabItems();
+
+    }
+    if (this.game.usrKeys.dropButton.isDown)
+    {
+        console.log(this.eq);
+    }
+
+    if (this.game.usrKeys.openShipMenuKey.isDown)
+    {
+
+
+    }
+
+    if (this.game.usrKeys.openShipMenuKey.isDown && !this.pressedopenShipMenuKey)
+    {
+        this.game.userInterface.OpenShipMenu();
+        this.pressedopenShipMenuKey = true;
+
+    }
+    if (!this.game.usrKeys.openShipMenuKey.isDown)
+    {
+        this.pressedopenShipMenuKey = false;
+    }
+    if (this.game.usrKeys.engineMinusKey.isDown)
+    {
+        if(this.thrustCurrent>0)
+            this.thrustCurrent--;
+    }
+    else if (this.game.usrKeys.enginePlusKey.isDown)
+    {
+        if(this.thrustCurrent<this.thrustMaximum)
+            this.thrustCurrent++;
+
+    }
+
+
+    if (this.game.usrKeys.engineDampMinusKey.isDown)
+    {
+        if(this.thrustCurrentDamp>0)
+            this.thrustCurrentDamp--;
+
+    }
+    else if (this.game.usrKeys.engineDampPlusKey.isDown)
+    {
+        if(this.thrustCurrentDamp<this.thrustMaximum)
+            this.thrustCurrentDamp++;
+
+    }
+
+
+
+
+
+
+
+};
+Player.prototype.checkBulletsForHits = function(gameObjects)    {
+
+    for (var i = 0,j = this.weapon.bulletsAmountinPool;i<j;i++ ) {
+        var b = this.weapon.bullets[i];
+        if(b.visible)
+        {
+            gameObjects.forEach(function (gameObject) {
+
+
+                if (gameObject.b.body !== null) {
+
+                    if (b.armed
+                        && Phaser.Rectangle.intersects(gameObject.b.getBounds(),
+                            b.getBounds())) {
+
+                        if (gameObject.objType === 'asteroid') {
+
+                            if(((gameObject.b.x - b.x)*(gameObject.b.x - b.x)+(gameObject.b.y - b.y)*(gameObject.b.y - b.y)) < gameObject.squaredRadius) {
+
+                                gameObject.getDamage(b.weapon);
+
+                                if(gameObject.b.game!=null && gameObject.b.game.effectsEnabled) {
+                                    gameObject.b.game.damageEmiter.x = b.x;
+                                    gameObject.b.game.damageEmiter.y = b.y;
+                                    gameObject.b.game.damageEmiter.start(true, 500, null, 5);
+                                }
+                                b.init();
+                                if (gameObject.health < 0) {
+                                    gameObject = {};
+                                }
+                            }
+                        }
+                    }
+                }
+
+            })
+        }
+    }
+
+
+};
 Player.prototype.controlByMouse = function (pointer) {
 
 
