@@ -1,4 +1,56 @@
+//game.enemies = new EnemyGroup(planets[0].x,(planets[0].y-planets[0].b.width*0.56-500),300,0,0.05,true,game);
 
+EnemyGroup = function(positionX, positionY, radius, angle, rotateSpeed, clockwise,game) {
+
+    Phaser.Group.call(this, game);
+    this.position = {x:positionX, y:positionY};
+    this.radius   = radius;
+    this.pivot.x  = positionX;
+    this.pivot.y  = positionY;
+    this.angle    = angle;
+
+    this.rotateSpeed = rotateSpeed;
+    this.clockwise   = clockwise;
+
+    this.addChild(new Enemy(this.position, this.radius, 0.4,game));
+    this.addChild(new Enemy(this.position, this.radius, 0.4,game));
+    this.addChild(new Enemy(this.position, this.radius, 0.4,game));
+    this.addChild(new Enemy(this.position, this.radius, 0.4,game));
+
+    this.update = function(){
+    this.children.forEach(function (ch) {
+        ch.update();
+    })
+
+    }
+};
+
+EnemyGroup.prototype = Object.create(Phaser.Group.prototype);
+EnemyGroup.prototype.constructor = EnemyGroup;
+
+
+Enemy = function(position, radius, scale,game) {
+
+    Phaser.Sprite.call(this, game, position.x, position.y, 'ship1');
+    game.physics.p2.enable(this, true);
+    this.body.setCircle(7);
+    this.scale.setTo(scale);
+    this.anchor.setTo(0.5);
+    this.body.setCollisionGroup(game.spaceBodiesColGroup);
+    this.body.static = true;
+    this.body.collides(game.playerColGroup);
+    this.radius = radius;
+    this.angle = 10;
+    game.add.existing(this);
+
+    this.update = function(){
+
+
+    }
+};
+
+Enemy.prototype = Object.create(Phaser.Sprite.prototype);
+Enemy.prototype.constructor = Enemy;
 
 
 var Alt = Alt || {};

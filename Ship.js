@@ -346,14 +346,7 @@ Player.prototype.updateRelationsToPlanets = function () {
                         this.b.visible= true;
                         this.b.alive= true;
 
-                        this.planetLanded.orbit.addChild(this.b);
-                        this.b.reset(0,-500);
 
-                        this.b.body.removeNextStep = true;
-
-                        this.b.exists= false;
-                        this.b.visible= true;
-                        this.b.alive= true;
                         //this.planetLanded.orbit.bringToTop();
                         this.game.userInterface.labels.labelSpeed.style.backgroundColor = "transparent";
                         this.game.userInterface.labels.labelSpeed.style.fill = "#DDD";
