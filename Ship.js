@@ -45,11 +45,27 @@ MiniHud.prototype.updatePosition = function () {
         this.hud.y = this.par.b.y + this.offsetY ;
     }
 };
+function DamagableObj(maxHealth) {
+    this.hpmax = maxHealth;
+    this.hp = this.hpmax;
+};
+DamagableObj.prototype.getDamage = function (damage) {
+    this.hp-=damage;
+    if(this.OnDamage!==undefined)
+        this.OnDamage();
+    if(this.hp<=0 && this.onDestruct !== undefined)
+        this.onDestruct();
+
+
+};
+
+
 
 function Ship (x,y,game,hull,colGroup,colGroups) {
-
+    DamagableObj.apply(this,hull.mass);
     this.init(x,y,game,hull,colGroup,colGroups);
-    }
+    };
+Ship.prototype = Object.create(DamagableObj.prototype);
 Ship.prototype.update = function () {
 this.miniHud.updatePosition();
 };
