@@ -791,7 +791,7 @@ var Interface = {
         var mMap = {};
         mMap.buttons = this.game.add.group();
         mMap.UIblock = this.game.add.group();
-        mMap.zoom = 16;
+        mMap.zoom = 1;
         mMap.alpha = 0.5;
         var minimapSize = size;
         var gameSize = this.game.width;
@@ -807,7 +807,7 @@ var Interface = {
 
 
 
-        mMap.resolution = minimapSize / worldSize *mMap.zoom;
+        mMap.resolution = minimapSize / worldSize *mMap.zoom *16*16;
 
 
         mMap.UIblock.add(mMap.UIframe);

@@ -3,14 +3,14 @@
  */
 var MiniHud = function (obj) {
     this.init(obj);
-    this.addHealthBar();
+    this.addBars();
 
 };
 
 
 MiniHud.prototype = {};
-MiniHud.prototype.addHealthBar = function () {
-
+MiniHud.prototype.addBars = function () {
+    //todo добавить перечисление всех объектов в виде полоски и отображеие
 };
 MiniHud.prototype.init = function (obj) {
     this.game = obj.game || obj.b.game;
@@ -185,8 +185,8 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
 };
 Ship.prototype.addMiniHud = function (level) {
   this.miniHud = new MiniHud(this,level);
-  console.log(this.miniHud);
 };
+
 Ship.prototype.initSecondaryEngines = function () {
     console.log("init sec eng",this.b.key);
     var sprite = this.eq.hull.secondaryEnginesSprite;
