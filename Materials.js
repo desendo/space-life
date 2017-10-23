@@ -1,5 +1,5 @@
 var Materials = Materials || {};
-
+Materials.Asteroids = {};
 Materials =
     {
       asteroid1:
@@ -15,8 +15,86 @@ Materials =
 
           }
     };
+Materials.Elements=
+    {
+        Al:{},
+        Fe:{},
+        Ni:{},
+        C:{},
+        O:{}
+    };
+Materials.Asteroids.Minerals =
 
+    {
+        typeC:
+            {
+                name: "c-type",
+                rarity: 0.75,
+                typeName: PickableObjectTypes.material,
+                title: "темный камень",
+                sprite: "rock",
+                tint:"0xAAAAAA",
+                density: 1.2,
+                descr: "часть обычного на вид астероида, может содержать полезные ископаемые " +
+                "в том числе и очень редкие. для подробной информации необходимо произвести" +
+                " исследование этого типа астероидов",
+                contains1:{
+                    material:Materials.Elements.Fe,
+                    part: 0.10
+                },
+                contains2:{
+                    material:Materials.Elements.C,
+                    part: 0.50
+                },
+            },
+        typeM:
+            {
+                name: "M-type",
+                rarity: 0.08,
+                typeName: PickableObjectTypes.material,
+                title: "блестящий камень",
+                tint:"0xFFFFFF",
+                sprite: "rock",
+                density: 5.2,
+                descr: "часть обычного на вид астероида, может содержать полезные ископаемые " +
+                "в том числе и очень редкие. для подробной информации необходимо произвести" +
+                " исследование этого типа астероидов",
+                contains1:{
+                    material:Materials.Elements.Fe,
+                    part: 0.40
+                },
+                contains2{
+                    material:Materials.Elements.Ni,
+                    part: 0.20
+                },
+            },
+        typeM:
+            {
+                name: "M-type",
+                rarity: 0.08,
+                typeName: PickableObjectTypes.material,
+                title: "блестящий камень",
+                tint:"0xFFFFFF",
+                sprite: "rock",
+                density: 5.2,
+                descr: "часть обычного на вид астероида, может содержать полезные ископаемые " +
+                "в том числе и очень редкие. для подробной информации необходимо произвести" +
+                " исследование этого типа астероидов",
+                contains1:{
+                    material:Materials.Elements.Fe,
+                    part: 0.40
+                },
+                contains2{
+                    material:Materials.Elements.Ni,
+                    part: 0.40
+                },
+            },
 
+    };
+Materials.Junks=
+    {
+
+    };
 var Item =
     {
         constructor: function (x,y,game,config,colGroup,colGroups) {
