@@ -1,5 +1,3 @@
-
-
 var Interface = {
     constructor: function (sizes,game) {
         this.game = game;
@@ -13,8 +11,18 @@ var Interface = {
         this.shipMenu = new Interface.ShipMenu(this);
         this.mouseTooltip = new Interface.MouseTooltip(this);
 
+        this.game.onPlayerDamage.add(this.updateIndicators,this);
 
         return this;
+    },
+    updateIndicators: function (params) {
+
+
+        if(params.hullDamage!==undefined)
+        {
+            var dmg =params.hullDamage;
+            this.labels.hullBar.setHealth(this.labels.hullBar.hp-dmg);
+        }
     },
     MouseTooltip: function (parent) {
         this.game = parent.game;
@@ -561,7 +569,7 @@ var Interface = {
             height: 14,
             x: 129,
             y: 400,
-            maxHP:120,
+            maxHP:labels.game.ship.eq.hull.mass,
             bg: {
                 color: '#292536'
             },
@@ -572,11 +580,11 @@ var Interface = {
             flipped: false
         };
 
-        labels.ArmorBar = new HealthBar(labels.game, configArmorBar);
-        labels.ArmorBar.setFixedToCamera(true);
-        //labels.ArmorBar.setAnchor(0,1);
-        //labels.ArmorBar.setPercent(38);
-        labels.ArmorBar.setHealth(110);
+        labels.hullBar = new HealthBar(labels.game, configArmorBar);
+        labels.hullBar.setFixedToCamera(true);
+        //labels.hullBar.setAnchor(0,1);
+        //labels.hullBar.setPercent(38);
+        labels.hullBar.setHealth();
 
         return labels;
     },

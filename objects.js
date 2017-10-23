@@ -78,13 +78,16 @@ Alt.Bullet = function (game, x, y, key, frame,origin,weapon) {
     };
     this.init();
     this.spawn = function () {
+
         this.x = this.origin.b.x;
         this.y=this.origin.b.y;
 
         this.angle= origin.b.body.angle +90;
 
         this.velocityx=-this.weapon.bulletSpeed*origin.sin/ 100+origin.b.body.velocity.x/GLOBAL.SPEED;
+
         this.velocityy=-this.weapon.bulletSpeed*origin.cos/ 100+origin.b.body.velocity.y/GLOBAL.SPEED;
+
 
 
         this.visible=true;
@@ -215,12 +218,12 @@ Planet.prototype.init = function (x,y,size,sprite,gravityDistance,name="Земл
     this.atm = this.createAtmosphere();
     this.atmRadiusSquared = this.atmRadius*this.atmRadius;
     this.orbit = this.game.add.group(this.game.world);
-    console.log(this.orbit);
-    console.log(this.orbit.centerX,this.orbit.centerY);
+
+
     this.orbit.centerX=x;
 
     this.orbit.centerY=y;
-    console.log(this.orbit.centerX,this.orbit.centerY);
+
 };
 Planet.prototype.deltaDir = function () {
     return new Phaser.Point(this.deltaDir.x-this.oldDirToShip.x,this.deltaDir.y-this.oldDirToShip.y);
@@ -268,7 +271,8 @@ var Asteroid = {
         this.b.frame = randomInteger(0,7);
         this.b.rotation = 2*Math.PI*Math.random();
         this.game.physics.p2.enable(this.b,false);
-        this.b.body.damping=0.9;
+        this.b.body.damping=0.0;
+        this.b.body.mass=size;
 
         this.b.body.setCircle(this.b.width/2*0.8);
         this.initW = this.b.width;

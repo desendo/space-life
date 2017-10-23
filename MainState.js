@@ -92,6 +92,9 @@ SpaceLifeGame.MainState.prototype = {
         this.game.time.advancedTiming = true;
         this.game.world.setBounds(0, 0, worldSize, worldSize);
         this.game.worldSize = worldSize;
+        this.game.eventmanager = new EventManager(this.game);
+
+
         createStarsBackground(starsBackground);
 
         createGamePhysics();
@@ -153,10 +156,7 @@ SpaceLifeGame.MainState.prototype = {
 
 
 
-         if (Notification.permission !== "granted") {
 
-            sendNotification('Уведомления', { body: 'Вы разрешили уведомления. Теперь различные игровые события будут выводится через них.',icon: 'favicon-16x16.png', dir: 'auto' });
-         }
 
         //todo перенести эмитеры повреждений в alt.weapon. создать набор стандартных эмитеров, менять их при смете типа повреждения
         this.game.damageEmiter = this.game.add.emitter(ship.b.x,ship.b.y,30);
@@ -166,6 +166,13 @@ SpaceLifeGame.MainState.prototype = {
         this.game.damageEmiter.forEach(function(p) {p.tint ='0xe94f00';},this);
 
 
+        this.game.explosionEmiter = this.game.add.emitter(ship.b.x,ship.b.y,30);
+        this.game.explosionEmiter.makeParticles('part');
+        this.game.explosionEmiter.gravity = 0;
+        this.game.explosionEmiter.setAlpha(1, 0.5, 1500, Phaser.Easing.Linear.None,false);
+        this.game.explosionEmiter.forEach(function(p) {p.tint ='0xffc200';},this);
+
+        this.game.onPlayerDead.add(this.gameOver,this);
 
 
 
@@ -183,7 +190,14 @@ SpaceLifeGame.MainState.prototype = {
         gr.destroy();
     },
 
+    gameOver: function () {
+        game.input.enabled = false;
+        this.game.time.events.add(3000, function () {
+            this.camera.fade('#ffffff',3000);
+            this.camera.onFadeComplete.add(this.fadeComplete,this);
+        },this,this);
 
+    },
     update: function() {
 
 
@@ -196,7 +210,7 @@ SpaceLifeGame.MainState.prototype = {
         ship.updateRelationsToPlanets();
 
         if(ship.weapon) {
-            ship.updateWeapon();
+
             ship.checkBulletsForHits(gameObjects);
         }
         ship.postUpdate();
@@ -204,21 +218,11 @@ SpaceLifeGame.MainState.prototype = {
         this.gameObjectsUpdate();
         game.userInterface.updateLabels(game);
         this.readKeys();
-        this.game.isGameOver = game.userInterface.pilot.hpbar.hp<=0;
-        if (this.game.isGameOver)
-        {
 
-            game.input.enabled = false;
-
-            this.camera.fade('#ffffff',3000);
-            this.camera.onFadeComplete.add(this.fadeComplete,this);
-
-        }
 
 
     },
     fadeComplete: function () {
-
 
         game.input.enabled = true;
 
@@ -302,6 +306,7 @@ SpaceLifeGame.MainState.prototype = {
         if(this.x20counter===0) {
             this.x20counter = this.x20;
             gameObjects.forEach(function (sprite) {
+
                 if (
                     sprite.b.x + sprite.b.width < game.camera.x ||
 
@@ -310,6 +315,7 @@ SpaceLifeGame.MainState.prototype = {
 
                     sprite.b.y - sprite.b.height > game.camera.y + game.camera.height
                 ) {
+
                     sprite.b.renderable = false;
 
                 }

@@ -48,31 +48,46 @@ MiniHud.prototype.updatePosition = function () {
 function DamagableObj(maxHealth) {
     this.hpmax = maxHealth;
     this.hp = this.hpmax;
+
 };
 DamagableObj.prototype.getDamage = function (damage) {
     this.hp-=damage;
-    if(this.OnDamage!==undefined)
-        this.OnDamage();
-    if(this.hp<=0 && this.onDestruct !== undefined)
-        this.onDestruct();
+    console.log("get damaged to"+this.hp);
+    if(this.hp<=0)
+    {
+        this.Destruct();
+
+    }
+
+
+
 
 
 };
-
-
-
 function Ship (x,y,game,hull,colGroup,colGroups) {
-    DamagableObj.apply(this,hull.mass);
-    this.init(x,y,game,hull,colGroup,colGroups);
-    };
+
+
+    DamagableObj.apply(this,[hull.mass]);
+    this.init(x,y,game,hull,colGroup,colGroups);};
 Ship.prototype = Object.create(DamagableObj.prototype);
+Ship.prototype.DamageHandler = function (dmg) {
+
+    this.game.onPlayerDamage.dispatch({hullDamage:dmg});
+    this.getDamage(dmg);
+    console.log("damaged ",dmg);
+
+};
 Ship.prototype.update = function () {
 this.miniHud.updatePosition();
+this.updateWeapon();
 };
 Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.game = game;
     this.eq ={};
     this.eq.hull = hull;
+
+    this.sin = 0;
+    this.cos = 1;
 
     this.health =this.eq.hull.mass;
 
@@ -199,12 +214,46 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.addMiniHud(1);
     //Ship.prototype.constructor.apply(this,arguments);
 };
+Ship.prototype.Destruct = function()
+{
+
+    this.game.input.enabled = false;
+    this.isThrottling = false;
+    this.isThrottlingLeftSide = false;
+    this.isThrottlingRightSide = false;
+
+    this.b.exists=false;
+    this.game.explosionEmiter.x = this.b.x;
+    this.game.explosionEmiter.y = this.b.y;
+    this.game.explosionEmiter.start(true, 1500, null, 50);
+    this.b.alive=false;
+    this.b.exists=false;
+    this.b.visible=false;
+    this.b.body.velocity.x =0;
+    this.b.body.velocity.y =0;
+
+
+
+};
 Ship.prototype.addMiniHud = function (level) {
   this.miniHud = new MiniHud(this,level);
 };
+Ship.prototype.updateWeapon = function () {
+    if(this.eq.weapon!=null) {
 
+
+        this.weapon.fireAngle = 180 * this.b.rotation / Math.PI + 270;
+        this.weapon.fireFrom = new Phaser.Rectangle(this.b.x - this.sin * 25, this.b.y - this.cos * 25, 1, 1);
+        this.weapon.bullets.forEach(function (bullet) {
+
+            bullet.x += bullet.velocityx ;
+            bullet.y += bullet.velocityy ;
+
+        })
+    }
+};
 Ship.prototype.initSecondaryEngines = function () {
-    console.log("init sec eng",this.b.key);
+
     var sprite = this.eq.hull.secondaryEnginesSprite;
     var engineRotLeft = this.game.add.sprite(0,0,sprite);
     var engineRotRight = this.game.add.sprite(0,0,sprite);
@@ -467,7 +516,6 @@ Ship.prototype.calcEquipmentDependedParams = function () {
     {
         if( this instanceof Player) {
             this.game.userInterface.miniMap.enabled = false;
-            console.log("radar disabled");
         }
     }
 
@@ -479,7 +527,6 @@ Ship.prototype.calcEquipmentDependedParams = function () {
     else
     {
         //this.game.userInterface.miniMap.enabled=false;
-        console.log("power disabled");
     }
 
 
@@ -488,22 +535,25 @@ Ship.prototype.calcEquipmentDependedParams = function () {
 function NPC (x,y,game,hull,colGroup,colGroups){
     Ship.apply(this,arguments);
     this.eq.engine = Equipment.Engines.RD300;
+    this.eq.weapon = Equipment.Weapons.Laser1;
     this.calcEquipmentDependedParams();
     this.fuel = 10;
     this.thrustCurrent = 30;
-
+    this.weapon.fire();
     this.forward();
     this.sideThrust();
-    console.log(this.mass);
+
 
 }
 NPC.prototype = Object.create(Ship.prototype);
 NPC.prototype.update = function () {
-    Ship.prototype.update.apply(this);
-    this.sin = Math.sin(-this.b.rotation);
-    this.cos = Math.cos(this.b.rotation);
-    this.forward();
+    if(this.b.exists) {
+        Ship.prototype.update.apply(this);
+        this.sin = Math.sin(-this.b.rotation);
+        this.cos = Math.cos(this.b.rotation);
 
+        this.forward();
+    }
 };
 
 
@@ -526,6 +576,7 @@ function Player(x,y,game,hull,colGroup) {
     this.objType= 'player';
     this.money = 40;
     this.fuel=50;
+    this.DamageHandler(1);
 
 
 
@@ -578,20 +629,7 @@ Player.prototype.update = function () {
 
 
 };
-Player.prototype.updateWeapon = function () {
-    if(this.eq.weapon!=null) {
 
-
-        this.weapon.fireAngle = 180 * this.b.rotation / Math.PI + 270;
-        this.weapon.fireFrom = new Phaser.Rectangle(this.b.x - this.sin * 25, this.b.y - this.cos * 25, 1, 1);
-        this.weapon.bullets.forEach(function (bullet) {
-
-            bullet.x += bullet.velocityx ;
-            bullet.y += bullet.velocityy ;
-
-        })
-    }
-};
 Player.prototype.updateRelationsToPlanets = function () {
     this.globalStatus = '';
     this.planetsTotalGravity.x = 0;
@@ -706,6 +744,7 @@ Player.prototype.colCallback = function (shipBody,collidedBody) {
     if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='planet') {
         shipBody.parentObject.planetLanded = collidedBody.parentObject;
         console.log(shipBody.parentObject.oldVel/10+" км/сек");
+
         if(shipBody.parentObject.oldVel/10>10) {
             pilot.hpbar.setHealth(pilot.hpbar.hp - Math.round(shipBody.parentObject.oldVel/25));
             pilot.updateDamagePicture();
@@ -735,6 +774,22 @@ Player.prototype.colCallback = function (shipBody,collidedBody) {
             pilot.say("Трясет");
         }
     }
+
+    console.log("coll body vel ",collidedBody.velocity.x,collidedBody.velocity.y)
+    console.log("ship body vel ",shipBody.velocity.x,shipBody.velocity.y)
+    var mass = collidedBody.mass;
+    if(collidedBody.mass>100000)
+    {
+        mass = shipBody.mass*200;
+
+    }
+console.log("mass ",mass);
+    var collisionEnergy = Math.sqrt((collidedBody.velocity.x - shipBody.velocity.x)*(collidedBody.velocity.x - shipBody.velocity.x)/100+
+            (collidedBody.velocity.y - shipBody.velocity.y)*(collidedBody.velocity.y - shipBody.velocity.y)/100
+        )*mass;
+    console.log("coll energy",collisionEnergy);
+    shipBody.parentObject.DamageHandler(Math.floor(collisionEnergy));
+
 
 };
 
@@ -850,6 +905,12 @@ Player.prototype.dropItem = function (item) {
         this.onItemsChange();
         this.calcEquipmentDependedParams();
 
+
+    };
+Player.prototype.Destruct = function () {
+    Ship.prototype.Destruct.apply(this, arguments);
+
+    this.game.onPlayerDead.dispatch();
 
     };
 
@@ -1084,84 +1145,68 @@ Player.prototype.fillFuel = function () {
         }
     };
 Player.prototype.readKeyboardInput = function () {
-
-    if (this.game.usrKeys.switchFreeFlight.isDown && !this.pressedSwitchFreeflight)
-    {
-        this.isFreeFlight =!this.isFreeFlight;
+if(this.game.input.enabled) {
+    if (this.game.usrKeys.switchFreeFlight.isDown && !this.pressedSwitchFreeflight) {
+        this.isFreeFlight = !this.isFreeFlight;
         this.pressedSwitchFreeflight = true;
 
     }
-    if (!this.game.usrKeys.switchFreeFlight.isDown)
-    {
+    if (!this.game.usrKeys.switchFreeFlight.isDown) {
         this.pressedSwitchFreeflight = false;
     }
 
-    if (this.game.usrKeys.fireButton.isDown)
-    {
+    if (this.game.usrKeys.fireButton.isDown) {
 
-        if(this.eq.weapon) {
+        if (this.eq.weapon) {
             this.weapon.fire();
         }
 
     }
-    if (this.game.usrKeys.grabButton.isDown)
-    {
+    if (this.game.usrKeys.grabButton.isDown) {
         this.grabItems();
 
     }
-    if (this.game.usrKeys.dropButton.isDown)
-    {
+    if (this.game.usrKeys.dropButton.isDown) {
         console.log(this.eq);
     }
 
-    if (this.game.usrKeys.openShipMenuKey.isDown)
-    {
+    if (this.game.usrKeys.openShipMenuKey.isDown) {
 
 
     }
 
-    if (this.game.usrKeys.openShipMenuKey.isDown && !this.pressedopenShipMenuKey)
-    {
+    if (this.game.usrKeys.openShipMenuKey.isDown && !this.pressedopenShipMenuKey) {
         this.game.userInterface.OpenShipMenu();
         this.pressedopenShipMenuKey = true;
 
     }
-    if (!this.game.usrKeys.openShipMenuKey.isDown)
-    {
+    if (!this.game.usrKeys.openShipMenuKey.isDown) {
         this.pressedopenShipMenuKey = false;
     }
-    if (this.game.usrKeys.engineMinusKey.isDown)
-    {
-        if(this.thrustCurrent>0)
+    if (this.game.usrKeys.engineMinusKey.isDown) {
+        if (this.thrustCurrent > 0)
             this.thrustCurrent--;
     }
-    else if (this.game.usrKeys.enginePlusKey.isDown)
-    {
-        if(this.thrustCurrent<this.thrustMaximum)
+    else if (this.game.usrKeys.enginePlusKey.isDown) {
+        if (this.thrustCurrent < this.thrustMaximum)
             this.thrustCurrent++;
 
     }
 
 
-    if (this.game.usrKeys.engineDampMinusKey.isDown)
-    {
-        if(this.thrustCurrentDamp>0)
+    if (this.game.usrKeys.engineDampMinusKey.isDown) {
+        if (this.thrustCurrentDamp > 0)
             this.thrustCurrentDamp--;
 
     }
-    else if (this.game.usrKeys.engineDampPlusKey.isDown)
-    {
-        if(this.thrustCurrentDamp<this.thrustMaximum)
+    else if (this.game.usrKeys.engineDampPlusKey.isDown) {
+        if (this.thrustCurrentDamp < this.thrustMaximum)
             this.thrustCurrentDamp++;
 
     }
 
 
-
-
-
-
-
+}
 };
 Player.prototype.checkBulletsForHits = function(gameObjects)    {
 

@@ -84,7 +84,10 @@
             this.preloadBar.cropEnabled = false;
             this.preloadBar.visible = false;
             this.ready = true;
+            if (Notification.permission !== "granted") {
 
+                sendNotification('Уведомления', { body: 'Вы разрешили уведомления. Теперь различные игровые события будут выводится через них.',icon: 'favicon-16x16.png', dir: 'auto' });
+            }
 
         },
 
