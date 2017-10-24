@@ -1,11 +1,20 @@
 /**
  * Created by goblino on 14.10.2017.
  */
+var lang = 'ru';
+T = {};
+
+T.ru= {
+            newgame: "Новая игра",
+            continuegame: "Продолжить"
+
+        };
 var GLOBAL = GLOBAL || {};
 GLOBAL.IS_DEBUG = false;
 GLOBAL.SPEED = 55;
 
 var assets = 'assets/';
+var colorDarkGrey =  "#120009";
 var colorGrey =  "#3C3B40";
 var colorMiddle = "#9D9CA6";
 var colorLight = "#EDECF5";
@@ -13,8 +22,9 @@ var colorFlue = "#0F41A6";
 var colorMetal = "#5283A3";
 
 
-var font = { font: "12px Roboto mono" ,fill: "#ddd", align: "center",boundsAlignH: "center", boundsAlignV: "middle"  };
+var font = { font: "12px Roboto mono" ,fill: "#ddd", align: "center",boundsAlignH: "center", boundsAlignV: "middle"};
 var tooltip = { font: "12px Roboto mono" ,fill: colorLight, align: "left",boundsAlignH: "left", boundsAlignV: "top",  wordWrap: true, wordWrapWidth: 250};
+var menu = { font: "25px sans-serif" ,fill: '#DDDDDD', align: "center"};
 var speechFont = { font: "16px Tahoma" ,fill: "#ff1807", align: "center",boundsAlignH: "center", boundsAlignV: "middle"  };
 var fontLeft = { font: "12px Tahoma" ,fill: "#ddd", align: "left",boundsAlignH: "center", boundsAlignV: "middle"  };
 var fontLeft2 = { font: "22px Tahoma" ,fill: "#ddd", align: "left",boundsAlignH: "center", boundsAlignV: "middle"  };

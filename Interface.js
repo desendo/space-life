@@ -12,7 +12,7 @@ var Interface = {
         this.mouseTooltip = new Interface.MouseTooltip(this);
 
         this.game.onPlayerDamage.add(this.updateIndicators,this);
-
+        this.game.onPlayerInventoryChanged.add(this.shipMenu)
         return this;
     },
     updateIndicators: function (params) {
@@ -86,7 +86,6 @@ var Interface = {
     ShipMenu : function (parent) {
         this.game = parent.game;
         var game = this.game;
-        var ship = this.game.ship;
         var w = 400;
         var h = 500;
         var zones =
@@ -244,12 +243,13 @@ var Interface = {
 
         zones.shipView.createShipView = function(ship)
         {
-            this.avatar = game.add.sprite(this.w/2,this.h/2,ship.eq.hull.sprite,4);
+            this.avatar = game.add.sprite(this.w/2,this.h/2,"ship1",4);
             this.avatar.anchor.set(0.5);
             this.avatar.alpha = 1;
             this.avatar.customScale = this.w/this.avatar.width;
             this.avatar.scale.set(this.avatar.customScale);
             this.sprite.addChild(this.avatar);
+            zones.data.installedEquipmentGroup = game.add.group();
             zones.data.installedEquipmentGroup = ship.installedEquipmentGroup;
             game.world.bringToTop(zones.data.installedEquipmentGroup);
             //this.cellsX = this.w/
@@ -257,7 +257,7 @@ var Interface = {
 
         };
 
-        zones.shipView.createShipView(ship);
+
         zones.shipView.addItem = function (item,i) {
 
 
@@ -295,9 +295,9 @@ var Interface = {
             });
 
         };
-        zones.shipView.updateShipView = function () {
-
-            for (var i = 0; i < zones.data.installedEquipmentGroup .children.length; i++)
+        zones.shipView.updateShipView = function (ship) {
+        //    zones.data.installedEquipmentGroup = ship.installedEquipmentGroup;
+            for (var i = 0; i < zones.data.installedEquipmentGroup.children.length; i++)
             {
                 this.addItem( zones.data.installedEquipmentGroup.children[i],i);
             }
@@ -372,7 +372,9 @@ var Interface = {
             if(zones.data.detectZone(item)==='shipCargo' && item.parentObject.originZone==='shipView') {
 
                 console.log("uninstall", item);
-                ship.uninstallItem(item.parentObject);
+                //console.log("of ship", ship);
+
+               // ship.uninstallItem(item.parentObject);
             }
 
         };
@@ -473,16 +475,16 @@ var Interface = {
 
         btns.shipMenuButton = this.game.add.button(w,h,'shipButton',parent.OpenShipMenu,parent,1,3,2,1,btns.buttonsGroup);
         btns.shipMenuButton.setCustomDefaults(0,3);
-
-        btns.shipGrab = this.game.add.button(w,h-32,'shipButton',ship.grabItems,ship,1+4,3+4,2+4,1+4,btns.buttonsGroup);
+//todo make events ship.grabItems
+        btns.shipGrab = this.game.add.button(w,h-32,'shipButton',"",ship,1+4,3+4,2+4,1+4,btns.buttonsGroup);
         btns.shipGrab.setCustomDefaults(0+4,3+4);
         btns.shipGrab.enable(false);
-
-        btns.shipFuel = this.game.add.button(w,h-32*2,'shipButton',ship.fillFuel,ship,1+4*2,3+4*2,2+4*2,1+4*2,btns.buttonsGroup);
+//todo make events ship.fillFuel
+        btns.shipFuel = this.game.add.button(w,h-32*2,'shipButton',"",ship,1+4*2,3+4*2,2+4*2,1+4*2,btns.buttonsGroup);
         btns.shipFuel.setCustomDefaults(0+4*2,3+4*2);
         btns.shipFuel.enable(false);
-
-        btns.shipSell = this.game.add.button(w,h-32*3,'shipButton',ship.sellMaterials,ship,1+4*3,3+4*3,2+4*3,1+4*3,btns.buttonsGroup);
+//todo make events ship.sellMaterials
+        btns.shipSell = this.game.add.button(w,h-32*3,'shipButton',"",ship,1+4*3,3+4*3,2+4*3,1+4*3,btns.buttonsGroup);
         btns.shipSell.setCustomDefaults(0+4*3,3+4*3);
         btns.shipSell.enable(false);
 
@@ -569,7 +571,7 @@ var Interface = {
             height: 14,
             x: 129,
             y: 400,
-            maxHP:labels.game.ship.eq.hull.mass,
+            maxHP:616,
             bg: {
                 color: '#292536'
             },

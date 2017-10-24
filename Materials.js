@@ -23,11 +23,10 @@ Materials.Elements=
         C:{},
         O:{}
     };
+Materials.Asteroids = {};
 Materials.Asteroids.Minerals =
-
     {
-        typeC:
-            {
+        typeC: {
                 name: "c-type",
                 rarity: 0.75,
                 typeName: PickableObjectTypes.material,
@@ -47,8 +46,7 @@ Materials.Asteroids.Minerals =
                     part: 0.50
                 },
             },
-        typeM:
-            {
+        typeM: {
                 name: "M-type",
                 rarity: 0.08,
                 typeName: PickableObjectTypes.material,
@@ -63,17 +61,16 @@ Materials.Asteroids.Minerals =
                     material:Materials.Elements.Fe,
                     part: 0.40
                 },
-                contains2{
+                contains2:{
                     material:Materials.Elements.Ni,
                     part: 0.20
-                },
+                }
             },
-        typeM:
-            {
-                name: "M-type",
+        typeS: {
+                name: "S-type",
                 rarity: 0.08,
                 typeName: PickableObjectTypes.material,
-                title: "блестящий камень",
+                title: "j,s камень",
                 tint:"0xFFFFFF",
                 sprite: "rock",
                 density: 5.2,
@@ -84,12 +81,11 @@ Materials.Asteroids.Minerals =
                     material:Materials.Elements.Fe,
                     part: 0.40
                 },
-                contains2{
+                contains2:{
                     material:Materials.Elements.Ni,
                     part: 0.40
-                },
-            },
-
+                }
+            }
     };
 Materials.Junks=
     {

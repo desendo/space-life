@@ -577,6 +577,7 @@ function Player(x,y,game,hull,colGroup) {
     this.money = 40;
     this.fuel=50;
     this.DamageHandler(1);
+    this.game.onPlayerInventoryChanged.add(this.onItemsChange,this);
 
 
 
@@ -596,7 +597,9 @@ Player.prototype.SetStartEq = function () {
 
 
     this.game.userInterface.shipMenu.shipCargo.populateGrid(this.cargoItemsGroup);
-    this.game.userInterface.shipMenu.shipView.updateShipView(this.installedEquipmentGroup);
+    this.game.userInterface.shipMenu.shipView.createShipView(this);
+    this.game.userInterface.shipMenu.shipView.updateShipView(this.installedEquipmentGroup)
+
     this.onItemsChange();
 
 
@@ -859,7 +862,7 @@ Player.prototype.grabItems = function () {
                 if(m>0) {
                     grabbedItems++;
                     this.putItemToCargo(this.itemsToGrabToCargo[i]);
-                    this.onItemsChange();
+                    this.game.onPlayerInventoryChanged.dispatch();
                 }
 
             }
@@ -884,7 +887,8 @@ Player.prototype.grabItems = function () {
             console.log("in cargo ",this.cargoItemsGroup.length);
 
             this.onItemsChange();
-            this.game.userInterface.shipMenu.shipCargo.populateGrid(this.cargoItemsGroup);
+            this.game.onPlayerInventoryChanged.dispatch();
+            //this.game.userInterface.shipMenu.shipCargo.populateGrid(this.cargoItemsGroup);
         }
         this.itemsToGrabToCargo.length=0;
 
