@@ -117,20 +117,18 @@ SpaceLifeGame.MainState.prototype = {
             this.game.planets.push(planet2);
             planet.b.body.setMaterial(planetMaterial);
             planet2.b.body.setMaterial(planetMaterial);
+
+
+
             var pos = new Phaser.Point(planets[0].x, (planets[0].y - planets[0].b.width * 0.56 - 300));
-
-
             ship = new Player(pos.x, pos.y, game, Equipment.Hulls.Ship1, game.playerColGroup);
-
+            ship.SetStartEq();
             game.npc1 = new NPC(pos.x - 40, pos.y - 60, game, Equipment.Hulls.Ship0, game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup]);
             game.npc2 = new NPC(pos.x + 30, pos.y - 40, game, Equipment.Hulls.Ship0, game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup]);
-
             game.ship = ship;
 
             game.ship.b.body.setMaterial(shipMaterial);
-
             ship.b.body.collides(game.spaceBodiesColGroup, ship.colCallback, this);
-            //ship.b.body.collides(game.shipsColGroup,function () {console.log("reerr");},this);
 
 
             gameObjects.push(game.ship);
@@ -138,9 +136,6 @@ SpaceLifeGame.MainState.prototype = {
             gameObjects.push(game.npc2);
             gameObjects.push(planet);
             gameObjects.push(planet2);
-            //var shipPlanetCM = game.physics.p2.createContactMaterial(shipMaterial, planetMaterial);
-            //shipPlanetCM.restitution = 0.0;
-            //shipPlanetCM.friction = 100.0;
 
             this.createCameraFadeOut();
 
@@ -153,8 +148,7 @@ SpaceLifeGame.MainState.prototype = {
 
 
 
-            ship.SetStartEq();
-            //game.userInterface.shipView.createShipView(ship);
+
 
 
 

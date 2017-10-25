@@ -217,18 +217,15 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
 Ship.prototype.Destruct = function()
 {
 
-    this.game.input.enabled = false;
+    this.isDead=true;
     this.isThrottling = false;
     this.isThrottlingLeftSide = false;
     this.isThrottlingRightSide = false;
 
-    this.b.exists=false;
     this.game.explosionEmiter.x = this.b.x;
     this.game.explosionEmiter.y = this.b.y;
     this.game.explosionEmiter.start(true, 1500, null, 50);
-    this.b.alive=false;
-    this.b.exists=false;
-    this.b.visible=false;
+
     this.b.body.velocity.x =0;
     this.b.body.velocity.y =0;
 
@@ -379,14 +376,9 @@ Ship.prototype.rotateLeft = function () {
 };
 Ship.prototype.forward = function (q = 1,damping = false) {
 
-    if(!this.b.exists)
-    {
-        this.b.exists =true;
-        this.b.alive =true;
-        this.b.visible =true;
-    }
-    if(this.fuel>0) {
 
+    if(this.fuel>0) {
+        this.isLanded=false;
         if (damping)
         {
             this.b.body.thrust(this.thrustCurrentDamp  * q);
@@ -605,7 +597,10 @@ Player.prototype.SetStartEq = function () {
 
 };
 
-
+Player.prototype.Land = function () {
+    console.log("land");
+    this.isLanded = true;
+};
 Player.prototype.update = function () {
     Ship.prototype.update.apply(this);
 
@@ -761,6 +756,7 @@ Player.prototype.colCallback = function (shipBody,collidedBody) {
         {
             pilot.say("Мягкая посадка");
         }
+        shipBody.parentObject.Land();
     }
     if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='asteroid') {
         shipBody.parentObject.planetLanded = collidedBody.parentObject;
@@ -778,15 +774,13 @@ Player.prototype.colCallback = function (shipBody,collidedBody) {
         }
     }
 
-    console.log("coll body vel ",collidedBody.velocity.x,collidedBody.velocity.y)
-    console.log("ship body vel ",shipBody.velocity.x,shipBody.velocity.y)
     var mass = collidedBody.mass;
     if(collidedBody.mass>100000)
     {
-        mass = shipBody.mass*200;
+        mass = shipBody.mass*100;
 
     }
-console.log("mass ",mass);
+    console.log("mass ",mass);
     var collisionEnergy = Math.sqrt((collidedBody.velocity.x - shipBody.velocity.x)*(collidedBody.velocity.x - shipBody.velocity.x)/100+
             (collidedBody.velocity.y - shipBody.velocity.y)*(collidedBody.velocity.y - shipBody.velocity.y)/100
         )*mass;
@@ -1149,7 +1143,7 @@ Player.prototype.fillFuel = function () {
         }
     };
 Player.prototype.readKeyboardInput = function () {
-if(this.game.input.enabled) {
+if(this.game.input.enabled && !this.isDead) {
     if (this.game.usrKeys.switchFreeFlight.isDown && !this.pressedSwitchFreeflight) {
         this.isFreeFlight = !this.isFreeFlight;
         this.pressedSwitchFreeflight = true;
@@ -1171,7 +1165,7 @@ if(this.game.input.enabled) {
 
     }
     if (this.game.usrKeys.dropButton.isDown) {
-        console.log(this.eq);
+        console.log(this.b);
     }
 
     if (this.game.usrKeys.openShipMenuKey.isDown) {

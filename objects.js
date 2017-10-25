@@ -161,6 +161,7 @@ var Planet = function (x,y,size,sprite,gravityDistance,name="Земля 2",colGr
   this.init(x,y,size,sprite,gravityDistance,name="Земля 2",colGroup,colGroups,game);
 };
 Planet.prototype.init = function (x,y,size,sprite,gravityDistance,name="Земля 2",colGroup,colGroups,game) {
+
     this.pricesSell={};
     this.pricesBuy={};
     this.dirToShip={};
@@ -217,12 +218,7 @@ Planet.prototype.init = function (x,y,size,sprite,gravityDistance,name="Земл
     this.labelPos.y = -this.size;
     this.atm = this.createAtmosphere();
     this.atmRadiusSquared = this.atmRadius*this.atmRadius;
-    this.orbit = this.game.add.group(this.game.world);
 
-
-    this.orbit.centerX=x;
-
-    this.orbit.centerY=y;
 
 };
 Planet.prototype.deltaDir = function () {
