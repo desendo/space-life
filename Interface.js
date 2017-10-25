@@ -1,6 +1,7 @@
 var Interface = {
     constructor: function (sizes,game) {
         this.game = game;
+
         this.sizes = sizes;
         this.status = '';
         this.miniMap = new Interface.MiniMap(sizes[0],this);
@@ -12,7 +13,7 @@ var Interface = {
         this.mouseTooltip = new Interface.MouseTooltip(this);
 
         this.game.onPlayerDamage.add(this.updateIndicators,this);
-        this.game.onPlayerInventoryChanged.add(this.shipMenu)
+        this.game.onPlayerInventoryChanged.add(this.shipMenu.data.InventoryChangeHandler,this);
         return this;
     },
     updateIndicators: function (params) {
@@ -86,6 +87,7 @@ var Interface = {
     ShipMenu : function (parent) {
         this.game = parent.game;
         var game = this.game;
+        var ship = this.game.ship;
         var w = 400;
         var h = 500;
         var zones =
@@ -252,8 +254,6 @@ var Interface = {
             zones.data.installedEquipmentGroup = game.add.group();
             zones.data.installedEquipmentGroup = ship.installedEquipmentGroup;
             game.world.bringToTop(zones.data.installedEquipmentGroup);
-            //this.cellsX = this.w/
-
 
         };
 
@@ -330,14 +330,20 @@ var Interface = {
 
 
         };
+        zones.data.InventoryChangeHandler = function () {
+
+
+        };
     //    zones.shipInfo.updateShipView(ship);
         zones.shipCargo.onDragItemStop = function (item) {
 
+        var ship = item.game.ship;
             if(zones.data.detectZone(item)===null) {
 
                 item.scale.set(item.parentObject.originalSize || 2);
                 ship.uninstallItem(item.parentObject);
                 ship.dropItem(item.parentObject);
+                this.game.onPlayerInventoryChanged.dispatch();
 
             }
             if(zones.data.detectZone(item)==='shipInfo') {
@@ -356,6 +362,7 @@ var Interface = {
 
                     item.x =item.parentObject.dragStart.x;
                     item.y=item.parentObject.dragStart.y;
+
                 }
                 else
                 {
@@ -363,7 +370,8 @@ var Interface = {
 
                     ship.cargoItemsGroup.remove(item);
                     ship.installedEquipmentGroup.add(item);
-                    ship.onItemsChange();
+                    //ship.onItemsChange();
+                    this.game.onPlayerInventoryChanged.dispatch();
 
                 }
 
@@ -374,7 +382,7 @@ var Interface = {
                 console.log("uninstall", item);
                 //console.log("of ship", ship);
 
-               // ship.uninstallItem(item.parentObject);
+               ship.uninstallItem(item.parentObject);
             }
 
         };
@@ -953,10 +961,6 @@ var Interface = {
         miniMap.UIblock.sendToBack(miniMap.UIframe);
 
     }
-
-
-
-
 
 };
 
