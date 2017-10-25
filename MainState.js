@@ -92,6 +92,9 @@ SpaceLifeGame.MainState.prototype = {
         this.game.time.advancedTiming = true;
         this.game.world.setBounds(0, 0, worldSize, worldSize);
         this.game.worldSize = worldSize;
+        this.game.eventmanager = new EventManager(this.game);
+
+
         createStarsBackground(starsBackground);
 
         createGamePhysics();
@@ -102,62 +105,62 @@ SpaceLifeGame.MainState.prototype = {
         game.input.mouse.mouseWheelCallback = mouseWheel;
         SetGameControls();
         createGameCollisionGroups();
+        game.userInterface = Object.create(Interface).constructor([150, 100, 150], game);
+        if(this.game.continue)
+        {
+            console.log(this.game.continue);
+        }
+        else {
+            planet = new Planet(worldSize / 2, worldSize / 2, 18, 'planet', 1500, 'Земля 2', game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup], game);
+            planet2 = new Planet(worldSize / 2 - 2000, worldSize / 2 + 4000, 12, 'planet', 900, 'Земля 3', game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup], game);
+            this.game.planets.push(planet);
+            this.game.planets.push(planet2);
+            planet.b.body.setMaterial(planetMaterial);
+            planet2.b.body.setMaterial(planetMaterial);
+            var pos = new Phaser.Point(planets[0].x, (planets[0].y - planets[0].b.width * 0.56 - 300));
 
 
-        planet = new Planet(worldSize/2,worldSize/2,18,'planet',1500,'Земля 2',game.spaceBodiesColGroup,[game.spaceBodiesColGroup,game.playerColGroup],game);
-        planet2 = new Planet(worldSize/2-2000,worldSize/2+4000,12,'planet',900,'Земля 3',game.spaceBodiesColGroup,[game.spaceBodiesColGroup,game.playerColGroup],game);
-        this.game.planets.push(planet);
-        this.game.planets.push(planet2);
-        planet.b.body.setMaterial(planetMaterial);
-        planet2.b.body.setMaterial(planetMaterial);
-        var pos = new Phaser.Point(planets[0].x,(planets[0].y-planets[0].b.width*0.56-300));
+            ship = new Player(pos.x, pos.y, game, Equipment.Hulls.Ship1, game.playerColGroup);
+
+            game.npc1 = new NPC(pos.x - 40, pos.y - 60, game, Equipment.Hulls.Ship0, game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup]);
+            game.npc2 = new NPC(pos.x + 30, pos.y - 40, game, Equipment.Hulls.Ship0, game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup]);
+
+            game.ship = ship;
+
+            game.ship.b.body.setMaterial(shipMaterial);
+
+            ship.b.body.collides(game.spaceBodiesColGroup, ship.colCallback, this);
+            //ship.b.body.collides(game.shipsColGroup,function () {console.log("reerr");},this);
 
 
-        ship = new Player(pos.x,pos.y,game,Equipment.Hulls.Ship1,game.playerColGroup);
+            gameObjects.push(game.ship);
+            gameObjects.push(game.npc1);
+            gameObjects.push(game.npc2);
+            gameObjects.push(planet);
+            gameObjects.push(planet2);
+            //var shipPlanetCM = game.physics.p2.createContactMaterial(shipMaterial, planetMaterial);
+            //shipPlanetCM.restitution = 0.0;
+            //shipPlanetCM.friction = 100.0;
 
-        game.npc1 = new NPC(pos.x-40,pos.y-60,game,Equipment.Hulls.Ship0,game.spaceBodiesColGroup,[game.spaceBodiesColGroup,game.playerColGroup]);
-        game.npc2 = new NPC(pos.x+30,pos.y-40,game,Equipment.Hulls.Ship0,game.spaceBodiesColGroup,[game.spaceBodiesColGroup,game.playerColGroup]);
-
-        game.ship = ship;
-
-        game.ship.b.body.setMaterial(shipMaterial);
-
-         ship.b.body.collides(game.spaceBodiesColGroup,ship.colCallback,this);
-        //ship.b.body.collides(game.shipsColGroup,function () {console.log("reerr");},this);
+            this.createCameraFadeOut();
 
 
-        gameObjects.push(game.ship);
-        gameObjects.push(game.npc1);
-        gameObjects.push(game.npc2);
-        gameObjects.push(planet);
-        gameObjects.push(planet2);
-        //var shipPlanetCM = game.physics.p2.createContactMaterial(shipMaterial, planetMaterial);
-        //shipPlanetCM.restitution = 0.0;
-        //shipPlanetCM.friction = 100.0;
+            this.camera.follow(ship.b);
+            generateAsteroids(5, 3, 4, 'asteroids1', game, game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup]);
 
-        this.createCameraFadeOut();
+            //collisions events
 
 
 
-        this.camera.follow(ship.b);
-        generateAsteroids(5,3,4,'asteroids1', game, game.spaceBodiesColGroup,[game.spaceBodiesColGroup,game.playerColGroup]);
 
-        //collisions events
+            ship.SetStartEq();
+            //game.userInterface.shipView.createShipView(ship);
 
 
-        game.userInterface = Object.create(Interface).constructor([150,100,150],game);
 
-        ship.SetStartEq();
+        }
 
         ship.InitShipMenu();
-
-
-
-         if (Notification.permission !== "granted") {
-
-            sendNotification('Уведомления', { body: 'Вы разрешили уведомления. Теперь различные игровые события будут выводится через них.',icon: 'favicon-16x16.png', dir: 'auto' });
-         }
-
         //todo перенести эмитеры повреждений в alt.weapon. создать набор стандартных эмитеров, менять их при смете типа повреждения
         this.game.damageEmiter = this.game.add.emitter(ship.b.x,ship.b.y,30);
         this.game.damageEmiter.makeParticles('part');
@@ -166,6 +169,13 @@ SpaceLifeGame.MainState.prototype = {
         this.game.damageEmiter.forEach(function(p) {p.tint ='0xe94f00';},this);
 
 
+        this.game.explosionEmiter = this.game.add.emitter(ship.b.x,ship.b.y,30);
+        this.game.explosionEmiter.makeParticles('part');
+        this.game.explosionEmiter.gravity = 0;
+        this.game.explosionEmiter.setAlpha(1, 0.5, 1500, Phaser.Easing.Linear.None,false);
+        this.game.explosionEmiter.forEach(function(p) {p.tint ='0xffc200';},this);
+
+        this.game.onPlayerDead.add(this.gameOver,this);
 
 
 
@@ -183,7 +193,14 @@ SpaceLifeGame.MainState.prototype = {
         gr.destroy();
     },
 
+    gameOver: function () {
+        game.input.enabled = false;
+        this.game.time.events.add(3000, function () {
+            this.camera.fade('#ffffff',3000);
+            this.camera.onFadeComplete.add(this.fadeComplete,this);
+        },this,this);
 
+    },
     update: function() {
 
 
@@ -196,7 +213,7 @@ SpaceLifeGame.MainState.prototype = {
         ship.updateRelationsToPlanets();
 
         if(ship.weapon) {
-            ship.updateWeapon();
+
             ship.checkBulletsForHits(gameObjects);
         }
         ship.postUpdate();
@@ -204,21 +221,11 @@ SpaceLifeGame.MainState.prototype = {
         this.gameObjectsUpdate();
         game.userInterface.updateLabels(game);
         this.readKeys();
-        this.game.isGameOver = game.userInterface.pilot.hpbar.hp<=0;
-        if (this.game.isGameOver)
-        {
 
-            game.input.enabled = false;
-
-            this.camera.fade('#ffffff',3000);
-            this.camera.onFadeComplete.add(this.fadeComplete,this);
-
-        }
 
 
     },
     fadeComplete: function () {
-
 
         game.input.enabled = true;
 
@@ -302,6 +309,7 @@ SpaceLifeGame.MainState.prototype = {
         if(this.x20counter===0) {
             this.x20counter = this.x20;
             gameObjects.forEach(function (sprite) {
+
                 if (
                     sprite.b.x + sprite.b.width < game.camera.x ||
 
@@ -310,6 +318,7 @@ SpaceLifeGame.MainState.prototype = {
 
                     sprite.b.y - sprite.b.height > game.camera.y + game.camera.height
                 ) {
+
                     sprite.b.renderable = false;
 
                 }

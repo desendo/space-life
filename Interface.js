@@ -1,8 +1,7 @@
-
-
 var Interface = {
     constructor: function (sizes,game) {
         this.game = game;
+
         this.sizes = sizes;
         this.status = '';
         this.miniMap = new Interface.MiniMap(sizes[0],this);
@@ -13,8 +12,18 @@ var Interface = {
         this.shipMenu = new Interface.ShipMenu(this);
         this.mouseTooltip = new Interface.MouseTooltip(this);
 
-
+        this.game.onPlayerDamage.add(this.updateIndicators,this);
+        this.game.onPlayerInventoryChanged.add(this.shipMenu.data.InventoryChangeHandler,this);
         return this;
+    },
+    updateIndicators: function (params) {
+
+
+        if(params.hullDamage!==undefined)
+        {
+            var dmg =params.hullDamage;
+            this.labels.hullBar.setHealth(this.labels.hullBar.hp-dmg);
+        }
     },
     MouseTooltip: function (parent) {
         this.game = parent.game;
@@ -236,20 +245,19 @@ var Interface = {
 
         zones.shipView.createShipView = function(ship)
         {
-            this.avatar = game.add.sprite(this.w/2,this.h/2,ship.eq.hull.sprite,4);
+            this.avatar = game.add.sprite(this.w/2,this.h/2,"ship1",4);
             this.avatar.anchor.set(0.5);
             this.avatar.alpha = 1;
             this.avatar.customScale = this.w/this.avatar.width;
             this.avatar.scale.set(this.avatar.customScale);
             this.sprite.addChild(this.avatar);
+            zones.data.installedEquipmentGroup = game.add.group();
             zones.data.installedEquipmentGroup = ship.installedEquipmentGroup;
             game.world.bringToTop(zones.data.installedEquipmentGroup);
-            //this.cellsX = this.w/
-
 
         };
 
-        zones.shipView.createShipView(ship);
+
         zones.shipView.addItem = function (item,i) {
 
 
@@ -287,9 +295,9 @@ var Interface = {
             });
 
         };
-        zones.shipView.updateShipView = function () {
-
-            for (var i = 0; i < zones.data.installedEquipmentGroup .children.length; i++)
+        zones.shipView.updateShipView = function (ship) {
+        //    zones.data.installedEquipmentGroup = ship.installedEquipmentGroup;
+            for (var i = 0; i < zones.data.installedEquipmentGroup.children.length; i++)
             {
                 this.addItem( zones.data.installedEquipmentGroup.children[i],i);
             }
@@ -322,14 +330,20 @@ var Interface = {
 
 
         };
+        zones.data.InventoryChangeHandler = function () {
+
+
+        };
     //    zones.shipInfo.updateShipView(ship);
         zones.shipCargo.onDragItemStop = function (item) {
 
+        var ship = item.game.ship;
             if(zones.data.detectZone(item)===null) {
 
                 item.scale.set(item.parentObject.originalSize || 2);
                 ship.uninstallItem(item.parentObject);
                 ship.dropItem(item.parentObject);
+                this.game.onPlayerInventoryChanged.dispatch();
 
             }
             if(zones.data.detectZone(item)==='shipInfo') {
@@ -348,6 +362,7 @@ var Interface = {
 
                     item.x =item.parentObject.dragStart.x;
                     item.y=item.parentObject.dragStart.y;
+
                 }
                 else
                 {
@@ -355,7 +370,8 @@ var Interface = {
 
                     ship.cargoItemsGroup.remove(item);
                     ship.installedEquipmentGroup.add(item);
-                    ship.onItemsChange();
+                    //ship.onItemsChange();
+                    this.game.onPlayerInventoryChanged.dispatch();
 
                 }
 
@@ -364,7 +380,9 @@ var Interface = {
             if(zones.data.detectZone(item)==='shipCargo' && item.parentObject.originZone==='shipView') {
 
                 console.log("uninstall", item);
-                ship.uninstallItem(item.parentObject);
+                //console.log("of ship", ship);
+
+               ship.uninstallItem(item.parentObject);
             }
 
         };
@@ -465,16 +483,16 @@ var Interface = {
 
         btns.shipMenuButton = this.game.add.button(w,h,'shipButton',parent.OpenShipMenu,parent,1,3,2,1,btns.buttonsGroup);
         btns.shipMenuButton.setCustomDefaults(0,3);
-
-        btns.shipGrab = this.game.add.button(w,h-32,'shipButton',ship.grabItems,ship,1+4,3+4,2+4,1+4,btns.buttonsGroup);
+//todo make events ship.grabItems
+        btns.shipGrab = this.game.add.button(w,h-32,'shipButton',"",ship,1+4,3+4,2+4,1+4,btns.buttonsGroup);
         btns.shipGrab.setCustomDefaults(0+4,3+4);
         btns.shipGrab.enable(false);
-
-        btns.shipFuel = this.game.add.button(w,h-32*2,'shipButton',ship.fillFuel,ship,1+4*2,3+4*2,2+4*2,1+4*2,btns.buttonsGroup);
+//todo make events ship.fillFuel
+        btns.shipFuel = this.game.add.button(w,h-32*2,'shipButton',"",ship,1+4*2,3+4*2,2+4*2,1+4*2,btns.buttonsGroup);
         btns.shipFuel.setCustomDefaults(0+4*2,3+4*2);
         btns.shipFuel.enable(false);
-
-        btns.shipSell = this.game.add.button(w,h-32*3,'shipButton',ship.sellMaterials,ship,1+4*3,3+4*3,2+4*3,1+4*3,btns.buttonsGroup);
+//todo make events ship.sellMaterials
+        btns.shipSell = this.game.add.button(w,h-32*3,'shipButton',"",ship,1+4*3,3+4*3,2+4*3,1+4*3,btns.buttonsGroup);
         btns.shipSell.setCustomDefaults(0+4*3,3+4*3);
         btns.shipSell.enable(false);
 
@@ -561,7 +579,7 @@ var Interface = {
             height: 14,
             x: 129,
             y: 400,
-            maxHP:120,
+            maxHP:616,
             bg: {
                 color: '#292536'
             },
@@ -572,11 +590,11 @@ var Interface = {
             flipped: false
         };
 
-        labels.ArmorBar = new HealthBar(labels.game, configArmorBar);
-        labels.ArmorBar.setFixedToCamera(true);
-        //labels.ArmorBar.setAnchor(0,1);
-        //labels.ArmorBar.setPercent(38);
-        labels.ArmorBar.setHealth(110);
+        labels.hullBar = new HealthBar(labels.game, configArmorBar);
+        labels.hullBar.setFixedToCamera(true);
+        //labels.hullBar.setAnchor(0,1);
+        //labels.hullBar.setPercent(38);
+        labels.hullBar.setHealth();
 
         return labels;
     },
@@ -791,7 +809,7 @@ var Interface = {
         var mMap = {};
         mMap.buttons = this.game.add.group();
         mMap.UIblock = this.game.add.group();
-        mMap.zoom = 16;
+        mMap.zoom = 1;
         mMap.alpha = 0.5;
         var minimapSize = size;
         var gameSize = this.game.width;
@@ -807,7 +825,7 @@ var Interface = {
 
 
 
-        mMap.resolution = minimapSize / worldSize *mMap.zoom;
+        mMap.resolution = minimapSize / worldSize *mMap.zoom *16*16;
 
 
         mMap.UIblock.add(mMap.UIframe);
@@ -943,10 +961,6 @@ var Interface = {
         miniMap.UIblock.sendToBack(miniMap.UIframe);
 
     }
-
-
-
-
 
 };
 
