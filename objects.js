@@ -67,7 +67,9 @@ Alt.Bullet = function (game, x, y, key, frame,origin,weapon) {
     this.game = game;
     this.origin = origin;
     this.armed = false;
+
     game.add.existing(this);
+    this.game.interfaceGroup.add(this);
     this.init = function () {
         this.x = 0;
         this.y=0;
@@ -187,7 +189,7 @@ Planet.prototype.init = function (x,y,size,sprite,gravityDistance,name="Земл
     this.gr.beginFill('0xFFFFFF',0.08);
     this.gr.drawCircle(x,y,this.gravDist*2);
     this.gr.endFill();
-
+    this.game.interfaceGroup.add(this.gr);
     this.gravDistSquared = (gravityDistance)*(gravityDistance);
 
     this.b.scale.set(this.size);
@@ -217,6 +219,7 @@ Planet.prototype.init = function (x,y,size,sprite,gravityDistance,name="Земл
     this.labelPos.x = 0;
     this.labelPos.y = -this.size;
     this.atm = this.createAtmosphere();
+    this.game.interfaceGroup.add(this.atm);
     this.atmRadiusSquared = this.atmRadius*this.atmRadius;
 
 
@@ -252,7 +255,7 @@ Planet.prototype.update = function () {
     for (var i = 0,j = this.game.spaceObjects.length;i <j; i++)
   {     go = this.game.spaceObjects[i];
         d = (go.b.x-this.b.x)*(go.b.x-this.b.x)+(go.b.y-this.b.y)*(go.b.y-this.b.y);
-      if(go.objType==='asteroid' && d<this.gravDistSquared)
+      if(go!==null && go.objType==='asteroid' && d<this.gravDistSquared)
       {
           go.dirToShip = new Phaser.Point(go.b.x -this.b.x,go.b.y -this.b.y);
           go.dirToShip.normalize();
@@ -260,6 +263,18 @@ Planet.prototype.update = function () {
 
           go.b.body.force.x   = -go.dirToShip.x/( q)*go.b.body.mass;
           go.b.body.force.y = -go.dirToShip.y /(q)*go.b.body.mass;
+          go.isGrav = true;
+          if(go!==null && d<this.atmRadiusSquared)
+          {
+              go.inAtmo = true;
+              go.asteroidBurn();
+
+          }
+          else
+          {
+              go.inAtmo = false;
+          }
+
 
       }
 
@@ -274,6 +289,9 @@ var Asteroid = {
     {
         this.game = game;
         this.x=x;
+        this.isAtmo = false;
+        this.isGrav = false;
+        this.damping = 0.1;
         this.y = y;
         this.size = size;
         this.health = size*1000*randomInteger(90,110)/100;
@@ -296,13 +314,15 @@ var Asteroid = {
         this.b.body.parentObject = this;
         this.b.parentObject = this;
         this.squaredRadius =  (this.b.width/2)*(this.b.width/2);
-
+        this.game.gameObjectLayer.add(this.b);
         this.breakeQuant = this.health/10;
         this.accumulatedDamage = 0;
         this.finalScale= this.b.scale.x;
         this.startHealth= this.health;
         this.totalDamage= 0;
+        this.asteroidBurn = function () {
 
+        };
         this.getDamage = function (bullet) {
             var weapon = bullet.weapon;
 
@@ -337,6 +357,14 @@ var Asteroid = {
 
 
 
+    },
+    update: function () {
+      if (this.isAtmo)
+          this.b.body.damping = 0.7;
+      else if (this.isGrav)
+          this.b.body.damping = 0;
+      else
+          this.b.body.damping = this.damping;
     },
     spawnMaterial: function (x,y,materialVolume, materialType, obj) {
 

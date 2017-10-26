@@ -54,7 +54,6 @@ SpaceLifeGame.MainState.prototype = {
         this.game.wheelDelta.setVal = function () {
             this.valueToChange =arguments;
 
-
         };
 
         game = this.game;
@@ -103,8 +102,8 @@ SpaceLifeGame.MainState.prototype = {
         else {
             planet = new Planet(worldSize / 2, worldSize / 2, 18, 'planet', 1500, 'Земля 2', game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup], game);
             planet2 = new Planet(worldSize / 2 - 2000, worldSize / 2 + 4000, 12, 'planet', 900, 'Земля 3', game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup], game);
-            this.game.gameObjectLayer.add(planet);
-            this.game.gameObjectLayer.add(planet2);
+            this.game.gameObjectLayer.add(planet.b);
+            this.game.gameObjectLayer.add(planet2.b);
             this.game.planets.push(planet);
             this.game.planets.push(planet2);
             planet.b.body.setMaterial(planetMaterial);
@@ -113,7 +112,9 @@ SpaceLifeGame.MainState.prototype = {
 
 
             var pos = new Phaser.Point(planets[0].x, (planets[0].y - planets[0].b.width * 0.56 - 300));
+
             ship = new Player(pos.x, pos.y, game, Equipment.Hulls.Ship1, game.playerColGroup);
+            this.game.gameObjectLayer.add(ship.b);
             ship.SetStartEq();
             // game.npc1 = new NPC(pos.x - 40, pos.y - 60, game, Equipment.Hulls.Ship0, game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup]);
             // game.npc2 = new NPC(pos.x + 30, pos.y - 40, game, Equipment.Hulls.Ship0, game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup]);
@@ -141,12 +142,13 @@ SpaceLifeGame.MainState.prototype = {
 
 
             ship.InitShipMenu();
+            this.game.interfaceGroup.z=-100;
             console.log("ship ",ship);
             console.log("this.game.interfaceGroup.z",this.game.interfaceGroup.z);
             console.log("this.game.world.z",this.game.world.z);
-//            console.log("this.game.gameObjectLayer",this.game.gameObjectLayer.z);
+            console.log("this.game.gameObjectLayer",this.game.gameObjectLayer.z);
 
-            //this.game.interfaceGroup.z=100;
+
             //this.game.world.z=100;
 
 
@@ -158,6 +160,7 @@ SpaceLifeGame.MainState.prototype = {
         this.game.damageEmiter.gravity = 0;
         this.game.damageEmiter.setAlpha(1, 0, 500, Phaser.Easing.Linear.None, false);
         this.game.damageEmiter.forEach(function(p) {p.tint ='0xe94f00';},this);
+
 
 
         this.game.explosionEmiter = this.game.add.emitter(ship.b.x,ship.b.y,30);

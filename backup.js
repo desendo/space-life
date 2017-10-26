@@ -24,7 +24,7 @@ var Material = {
 
         this.mass  =this.info.mass;
         this.b = this.game.add.sprite(this.x,this.y,this.material.sprite);
-
+        this.game.interfaceGroup.add(this.b);
         this.b.events.onInputOver.add(this.game.userInterface.mouseTooltip.aboveItem, this);
         this.b.events.onInputOut.add(this.game.userInterface.mouseTooltip.outOfItem, this);
         this.b.events.onInputDown.add(this.game.userInterface.mouseTooltip.clickToItem, this);
