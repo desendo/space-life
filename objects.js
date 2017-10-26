@@ -161,6 +161,7 @@ var Planet = function (x,y,size,sprite,gravityDistance,name="Земля 2",colGr
   this.init(x,y,size,sprite,gravityDistance,name="Земля 2",colGroup,colGroups,game);
 };
 Planet.prototype.init = function (x,y,size,sprite,gravityDistance,name="Земля 2",colGroup,colGroups,game) {
+
     this.pricesSell={};
     this.pricesBuy={};
     this.dirToShip={};
@@ -217,12 +218,7 @@ Planet.prototype.init = function (x,y,size,sprite,gravityDistance,name="Земл
     this.labelPos.y = -this.size;
     this.atm = this.createAtmosphere();
     this.atmRadiusSquared = this.atmRadius*this.atmRadius;
-    this.orbit = this.game.add.group(this.game.world);
 
-
-    this.orbit.centerX=x;
-
-    this.orbit.centerY=y;
 
 };
 Planet.prototype.deltaDir = function () {
@@ -249,7 +245,28 @@ Planet.prototype.createAtmosphere = function (atmRadius) {
     atm.endFill();
     return atm;
 };
+Planet.prototype.update = function () {
+    var go ={};
+    var d=0;
 
+    for (var i = 0,j = this.game.spaceObjects.length;i <j; i++)
+  {     go = this.game.spaceObjects[i];
+        d = (go.b.x-this.b.x)*(go.b.x-this.b.x)+(go.b.y-this.b.y)*(go.b.y-this.b.y);
+      if(go.objType==='asteroid' && d<this.gravDistSquared)
+      {
+          go.dirToShip = new Phaser.Point(go.b.x -this.b.x,go.b.y -this.b.y);
+          go.dirToShip.normalize();
+          var q = (d +2500*this.b.width) /(this.size*this.size *300000);
+
+          go.b.body.force.x   = -go.dirToShip.x/( q)*go.b.body.mass;
+          go.b.body.force.y = -go.dirToShip.y /(q)*go.b.body.mass;
+
+      }
+
+  }
+   // console.log(num);
+
+};
 
 var Asteroid = {
 
@@ -286,7 +303,8 @@ var Asteroid = {
         this.startHealth= this.health;
         this.totalDamage= 0;
 
-        this.getDamage = function (weapon) {
+        this.getDamage = function (bullet) {
+            var weapon = bullet.weapon;
 
             this.accumulatedDamage += weapon.damagePerShot * randomInteger(8,12)/10;
             if(this.accumulatedDamage>this.breakeQuant)
@@ -299,11 +317,11 @@ var Asteroid = {
                 this.health -= this.accumulatedDamage;
 
 
-                game.pickableItems.push(this.spawnMaterial(Math.round(this.accumulatedDamage * randomInteger(5, 8) / 10), Materials.asteroid1,this));
+                game.pickableItems.push(this.spawnMaterial(bullet.x,bullet.y,Math.round(this.accumulatedDamage * randomInteger(5, 8) / 10), Materials.asteroid1,this));
                 this.accumulatedDamage = 0;
                 if(this.health < this.breakeQuant*2) {
 
-                    game.pickableItems.push(this.spawnMaterial(Math.round(this.health * randomInteger(5, 8) / 10), Materials.asteroid1,  this));
+                    game.pickableItems.push(this.spawnMaterial(bullet.x,bullet.y,Math.round(this.health * randomInteger(5, 8) / 10), Materials.asteroid1,  this));
                     this.accumulatedDamage = 0;
                     this.health = -1;
 
@@ -320,9 +338,10 @@ var Asteroid = {
 
 
     },
-    spawnMaterial: function (materialVolume, materialType, obj) {
+    spawnMaterial: function (x,y,materialVolume, materialType, obj) {
 
-        return Object.create(Material).constructor(this.b.x+randomInteger(-5,5),this.b.y+randomInteger(-5,5), this.game,
+        //return Object.create(Material).constructor(this.b.x+randomInteger(-5,5),this.b.y+randomInteger(-5,5), this.game,
+        return Object.create(Material).constructor(x,y, this.game,
             materialType,this.game.spaceBodiesColGroup,[this.game.spaceBodiesColGroup,this.game.playerColGroup],materialVolume);
 
 

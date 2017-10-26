@@ -80,7 +80,7 @@ Equipment.Hulls = {
             shape: "ship1",
             sprite: "ship1",
             secondaryEnginesSprite: "sidethrust1",
-            space: "250",
+            space: "50",
             equipmentSlots:
                 {
                     weapon1:
