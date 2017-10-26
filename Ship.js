@@ -6,8 +6,6 @@ var MiniHud = function (obj) {
     this.addBars();
 
 };
-
-
 MiniHud.prototype = {};
 MiniHud.prototype.addBars = function () {
     //todo добавить перечисление всех объектов в виде полоски и отображеие
@@ -52,7 +50,7 @@ function DamagableObj(maxHealth) {
 };
 DamagableObj.prototype.getDamage = function (damage) {
     this.hp-=damage;
-    console.log("get damaged to"+this.hp);
+
     if(this.hp<=0)
     {
         this.Destruct();
@@ -70,21 +68,63 @@ function Ship (x,y,game,hull,colGroup,colGroups) {
     DamagableObj.apply(this,[hull.mass]);
     this.init(x,y,game,hull,colGroup,colGroups);};
 Ship.prototype = Object.create(DamagableObj.prototype);
-Ship.prototype.DamageHandler = function (dmg) {
+Ship.prototype.consumeFuel = function (value) {
 
-    this.game.onPlayerDamage.dispatch({hullDamage:dmg});
-    this.getDamage(dmg);
-    console.log("damaged ",dmg);
+    if(value >0) {
+        this.fuel -= value;
+    }
+};
+
+Ship.prototype.compensate = function(){
+
+
+    if (this.vel > 4) {
+
+        if (Math.cos(this.turnAngle) > 0) {
+            this.backward(Math.cos(this.turnAngle),true);
+            if (this.vel > 4)
+                this.sideThrust(-Math.sin(this.turnAngle),true);
+
+        }
+        else
+        {
+            this.forward(-Math.cos(this.turnAngle),true);
+            if (this.vel > 4) this.sideThrust(-Math.sin(this.turnAngle),true);
+        }
+
+    }
+    else {
+        this.sideThrust(0);
+    }
 
 };
+
 Ship.prototype.update = function () {
-this.miniHud.updatePosition();
-this.updateWeapon();
+
+    this.isThrottling=false;
+    this.isThrottlingBack=false;
+    this.isThrottlingLeftSide=false;
+    this.isThrottlingRightSide=false;
+
+    if(this.b.exists && this.b.body!==null) {
+        this.vel = Math.sqrt(this.b.body.velocity.x * this.b.body.velocity.x + this.b.body.velocity.y * this.b.body.velocity.y);
+
+        this.acc = Math.round(-(+this.oldVel - +this.vel) * 10) / 10;
+    }
+
+    this.miniHud.updatePosition();
+    this.updateWeapon();
+    this.checkBulletsForHits(this.game.spaceObjects);
+
 };
 Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.game = game;
     this.eq ={};
     this.eq.hull = hull;
+
+    this.acc = 0;
+    this.vel = 0;
+    this.oldVel = 0;
 
     this.sin = 0;
     this.cos = 1;
@@ -123,8 +163,7 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.mass = this.eq.hull.mass;
 
 
-    this.vel = 0;
-    this.oldVel = 0;
+
     this._thrustCurrent= 0;
     Object.defineProperty(this, "velNorm", {
         get: function() {
@@ -139,11 +178,13 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
             var v = this.velNorm;
             var angle;
 
+
             if (this.vel > 5) {
 
-                angle = Math.acos(d.x * v.x + d.y * v.y);
+                angle = +Math.acos(d.x * v.x + d.y * v.y);
                 if (v.cross(d) < 0)
                     angle = -angle;
+
                 return angle;
             }
             else
@@ -228,6 +269,8 @@ Ship.prototype.Destruct = function()
 
     this.b.body.velocity.x =0;
     this.b.body.velocity.y =0;
+    this.b.exists = false;
+
 
 
 
@@ -247,8 +290,62 @@ Ship.prototype.updateWeapon = function () {
             bullet.y += bullet.velocityy ;
 
         })
+
+
     }
 };
+Ship.prototype.checkBulletsForHits = function(gameObjects)    {
+    var l = gameObjects.length;
+    var gameObject = {};
+    for (var i = 0,j = this.weapon.bulletsAmountinPool;i<j;i++ ) {
+        var b = this.weapon.bullets[i];
+        if(b.visible)
+        {
+
+            for(var k = 0;k<l;k++)
+            {gameObject = gameObjects[k];
+                if (gameObject.b.exists && gameObject.b.body !== null && gameObject!= this) {
+
+                    if (b.armed
+                        && Phaser.Rectangle.intersects(gameObject.b.getBounds(),
+                            b.getBounds())) {
+
+
+                        if (gameObject.objType === 'asteroid') {
+
+                            if(((gameObject.b.x - b.x)*(gameObject.b.x - b.x)+(gameObject.b.y - b.y)*(gameObject.b.y - b.y)) < gameObject.squaredRadius) {
+
+                                gameObject.getDamage(b);
+
+                                if(gameObject.b.game!=null && gameObject.b.game.effectsEnabled) {
+                                    gameObject.b.game.damageEmiter.x = b.x;
+                                    gameObject.b.game.damageEmiter.y = b.y;
+                                    gameObject.b.game.damageEmiter.start(true, 500, null, 5);
+                                }
+                                b.init();
+                                if (gameObject.health < 0) {
+                                    gameObject = {};
+                                }
+                            }
+                        }
+                        if (gameObject.objType === 'ship') {
+                                if(gameObject.b.game!=null && gameObject.b.game.effectsEnabled) {
+                                    gameObject.b.game.damageEmiter.x = b.x;
+                                    gameObject.b.game.damageEmiter.y = b.y;
+                                    gameObject.b.game.damageEmiter.start(true, 500, null, 5);
+                                    gameObject.DamageHandler(70);
+                                    b.init();
+
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+
+        }
+    };
 Ship.prototype.initSecondaryEngines = function () {
 
     var sprite = this.eq.hull.secondaryEnginesSprite;
@@ -316,11 +413,36 @@ Ship.prototype.playAnimations = function () {
 
     if (this.isThrottlingRightSide)
     {
-        this.engineMarchRight.animations.play('thrustR', 20, true);
+       this.engineMarchRight.animations.play('thrustR', 20, true);
+
+    }
+
+    else
+        this.engineMarchRight.animations.play('stop',true);
+
+    if (this.isThrottlingBack || this.isThrottling )
+
+    {
+
+        if(this.isThrottlingBack)
+        {
+            this.b.animations.play('rfly',true);
+
+        }
+        if(this.isThrottling)
+        {
+
+
+            this.b.animations.play('fly',true);
+        }
 
     }
     else
-        this.engineMarchRight.animations.play('stop',true);
+    {
+
+        this.b.animations.play('stop', true);
+
+    }
     if (this.isThrottlingLeftSide)
     {
         this.engineMarchLeft.animations.play('thrustL', 20, true);
@@ -359,8 +481,8 @@ Ship.prototype.rotateRight = function () {
         this.b.body.rotateRight(this.rotationThrustCurrent);
         this.engineLeft.animations.play('thrustRotL', 10, true);
 
-        this.fuel -= this.eq.engine.rotationFuelConsumption * this.rotationThrustCurrent / this.rotationThrust;
-        this.isThrottling = true;
+        this.consumeFuel(this.eq.engine.rotationFuelConsumption * this.rotationThrustCurrent / this.rotationThrust);
+
     }
 
 };
@@ -369,53 +491,56 @@ Ship.prototype.rotateLeft = function () {
         this.b.body.rotateLeft(this.rotationThrustCurrent);
         this.engineRight.animations.play('thrustRotR', 10, true);
 
-        this.fuel -= this.eq.engine.rotationFuelConsumption * this.rotationThrustCurrent / this.rotationThrust;
-        this.isThrottling = true;
+        this.consumeFuel(this.eq.engine.rotationFuelConsumption * this.rotationThrustCurrent / this.rotationThrust);
+
     }
 
 };
 Ship.prototype.forward = function (q = 1,damping = false) {
 
+    if(!this.b.exists && !this.isDead)
+    {
+        this.b.exists =true;
+    }
 
     if(this.fuel>0) {
         this.isLanded=false;
         if (damping)
         {
             this.b.body.thrust(this.thrustCurrentDamp  * q);
-            this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrentDamp / this.thrustMaximum  * q;
+            this.consumeFuel(this.eq.engine.fuelConsumption * this.thrustCurrentDamp / this.thrustMaximum  * q);
 
         }
         else
         {
-
             this.b.body.thrust(this.thrustCurrent  * q);
-            this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrent / this.thrustMaximum  * q;
+            this.consumeFuel(this.eq.engine.fuelConsumption * this.thrustCurrent / this.thrustMaximum  * q);
 
         }
 
         this.isThrottling = true;
 
-        this.b.animations.play('fly', true);
+
     }
 
 };
 Ship.prototype.backward = function (q = 1,damping = false) {
-    if(this.fuel>0) {
+    if(this.fuel>0 ) {
         if (damping)
         {
             this.b.body.reverse(this.thrustCurrentDamp / 2 * q);
-            this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrentDamp / this.thrustMaximum / 2 * q;
+            this.consumeFuel( this.eq.engine.fuelConsumption * this.thrustCurrentDamp / this.thrustMaximum / 2 * q);
 
         }
         else
         {
             this.b.body.reverse(this.thrustCurrent / 2 * q);
-            this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrent / this.thrustMaximum / 2 * q;
+            this.consumeFuel(this.eq.engine.fuelConsumption * this.thrustCurrent / this.thrustMaximum / 2 * q);
 
         }
-        this.isThrottling = true;
+        this.isThrottlingBack = true;
 
-        this.b.animations.play('rfly', true);
+
     }
 };
 Ship.prototype.sideThrust = function (q = 1,damping = false) {
@@ -424,30 +549,39 @@ Ship.prototype.sideThrust = function (q = 1,damping = false) {
         if (q !== 0){
             if (damping) {
                 this.b.body.thrustLeft(this.thrustCurrentDamp * q/2);
-                this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrentDamp / this.thrustMaximum  * q/2;
+                this.consumeFuel(this.eq.engine.fuelConsumption * this.thrustCurrentDamp / this.thrustMaximum  * q/2);
             }
             else {
                 this.b.body.thrustLeft(this.thrustCurrent * q/2);
-                this.fuel -= this.eq.engine.fuelConsumption * this.thrustCurrent / this.thrustMaximum  * q/2;
+                this.consumeFuel(this.eq.engine.fuelConsumption * this.thrustCurrent / this.thrustMaximum  * q/2);
 
 
             }
-            if (q > 0)
+            if (q > 0) {
                 this.isThrottlingRightSide = true;
+
+            }
 
             else if (q < 0)
                 this.isThrottlingLeftSide = true;
 
-            this.isThrottling = true;
+
         }
         else
         {
+
             this.isThrottlingLeftSide = false;
             this.isThrottlingRightSide = false;
         }
 
 
 
+    }
+    else
+    {
+
+        this.isThrottlingLeftSide = false;
+        this.isThrottlingRightSide = false;
     }
 
 };
@@ -568,13 +702,12 @@ function Player(x,y,game,hull,colGroup) {
     this.objType= 'player';
     this.money = 40;
     this.fuel=50;
-    this.DamageHandler(1);
-    this.game.onPlayerInventoryChanged.add(this.onItemsChange,this);
+    this.game.onPlayerInventoryChanged.add(this.calcVolumeMass,this);
 
 
-
-}
+};
 Player.prototype = Object.create(Ship.prototype);
+
 Player.prototype.initHull = function (hull) {
     this.eq.hull = hull;
     this.cargoBayCap = hull.space;
@@ -588,17 +721,68 @@ Player.prototype.SetStartEq = function () {
     var radar = this.EquipmentFactory(Equipment.Radars.Radar1,false);
 
 
-    this.game.userInterface.shipMenu.shipCargo.populateGrid(this.cargoItemsGroup);
+    this.game.userInterface.shipMenu.shipCargo.populateGrid(this);
     this.game.userInterface.shipMenu.shipView.createShipView(this);
-    this.game.userInterface.shipMenu.shipView.updateShipView(this.installedEquipmentGroup)
+    this.game.userInterface.shipMenu.shipView.updateShipView(this)
 
-    this.onItemsChange();
+
+    this.calcVolumeMass();
 
 
 };
+Player.prototype.readKeys = function () {
+    var game = this.game;
+    if (game.usrKeys.rotLeftKey.isDown ) {
+        this.accRotateLeft();
+    }
+    else if (game.usrKeys.rotRightKey.isDown ) {
+        this.accRotateRight();
 
+    }
+    else {
+
+        this.rotationThrustCurrent = 0;
+        this.b.body.setZeroRotation();
+        this.engineLeft.animations.play('stop', 20, true);
+        this.engineRight.animations.play('stop', 20, true);
+    }
+
+    this.propulsing = false;
+
+    if (game.usrKeys.forwardKey.isDown && this.fuel > 0 && this.thrustCurrent>0) {
+        this.forward();
+        this.propulsing = true;
+
+    }
+    else if (game.usrKeys.backwardKey.isDown  && this.fuel > 0 && this.thrustCurrent>0) {
+        this.backward();
+        this.propulsing = true;
+    }
+    if (this.game.usrKeys.sideLeftKey.isDown && this.fuel > 0 && this.thrustCurrent>0 ) {
+
+        this.sideThrust(1);
+        this.propulsing = true;
+    }
+    if (this.game.usrKeys.sideRightKey.isDown && this.fuel > 0 && this.thrustCurrent>0) {
+
+        this.sideThrust(-1);
+        this.propulsing = true;
+
+    }
+
+};
+Player.prototype.DamageHandler = function (dmg) {
+
+
+
+    this.getDamage(dmg);
+    this.game.onPlayerDamage.dispatch({hull:this.hp});
+    console.log("hp/hpmax",this.hp,this.hpmax);
+
+
+};
 Player.prototype.Land = function () {
-    console.log("land");
+
     this.isLanded = true;
 };
 Player.prototype.update = function () {
@@ -608,10 +792,8 @@ Player.prototype.update = function () {
     this.cos = Math.cos(this.b.rotation);
 
 
-    if(this.b.body!==null) {
-        this.vel = Math.sqrt(this.b.body.velocity.x * this.b.body.velocity.x + this.b.body.velocity.y * this.b.body.velocity.y);
+    if(this.b.exists && this.b.body!==null) {
 
-        this.acc = Math.round(-(+this.oldVel - +this.vel) * 10) / 10;
 
 
         this.updateItemsToGrab();
@@ -621,13 +803,16 @@ Player.prototype.update = function () {
     this.game.userInterface.shipInterface.shipGrab.enable(this.eq.grabber!==null && this.itemsToGrabToCargo.length > 0);
     this.game.userInterface.shipInterface.shipFuel.enable(this.isLanded && this.money > 0);
     this.game.userInterface.shipInterface.shipSell.enable(this.isLanded && this.cargoItemsGroup.children.length > 0);
+    this.readKeys();
+    this.readKeyboardInput();
+    if (!this.isFreeFlight && !this.propulsing && this.fuel > 0 && this.thrustCurrentDamp>0 ){
 
-    this.isThrottlingRightSide = false;
-    this.isThrottlingLeftSide = false;
+        this.compensate();
+    }
+    this.playAnimations();
 
 
 };
-
 Player.prototype.updateRelationsToPlanets = function () {
     this.globalStatus = '';
     this.planetsTotalGravity.x = 0;
@@ -737,11 +922,11 @@ Player.prototype.updateRelationsToPlanets = function () {
 
 };
 Player.prototype.colCallback = function (shipBody,collidedBody) {
-    console.log("бум");
+    console.log(arguments);
     var pilot =shipBody.parentObject.game.userInterface.pilot;
     if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='planet') {
         shipBody.parentObject.planetLanded = collidedBody.parentObject;
-        console.log(shipBody.parentObject.oldVel/10+" км/сек");
+        //console.log(shipBody.parentObject.oldVel/10+" км/сек");
 
         if(shipBody.parentObject.oldVel/10>10) {
             pilot.hpbar.setHealth(pilot.hpbar.hp - Math.round(shipBody.parentObject.oldVel/25));
@@ -760,7 +945,7 @@ Player.prototype.colCallback = function (shipBody,collidedBody) {
     }
     if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='asteroid') {
         shipBody.parentObject.planetLanded = collidedBody.parentObject;
-        console.log("астероид "+ shipBody.parentObject.oldVel/10+" км/сек");
+        //console.log("астероид "+ shipBody.parentObject.oldVel/10+" км/сек");
         if(shipBody.parentObject.oldVel/10>10) {
             pilot.hpbar.setHealth(pilot.hpbar.hp - Math.round(shipBody.parentObject.oldVel/50));
             pilot.updateDamagePicture();
@@ -780,17 +965,20 @@ Player.prototype.colCallback = function (shipBody,collidedBody) {
         mass = shipBody.mass*100;
 
     }
-    console.log("mass ",mass);
     var collisionEnergy = Math.sqrt((collidedBody.velocity.x - shipBody.velocity.x)*(collidedBody.velocity.x - shipBody.velocity.x)/100+
             (collidedBody.velocity.y - shipBody.velocity.y)*(collidedBody.velocity.y - shipBody.velocity.y)/100
         )*mass;
-    console.log("coll energy",collisionEnergy);
+
     shipBody.parentObject.DamageHandler(Math.floor(collisionEnergy));
+    shipBody.parentObject.game.explosionEmiter.x = shipBody.parentObject.b.x;
+    shipBody.parentObject.game.explosionEmiter.y = shipBody.parentObject.b.y;
+    shipBody.parentObject.game.explosionEmiter.start(true, 500, null, 30);
+
 
 
 };
+Player.prototype.calcVolumeMass = function () {
 
-Player.prototype.onItemsChange = function () {
     var mass = this.eq.hull.mass;
     var volume = 0;
     var ship = this;
@@ -819,7 +1007,6 @@ Player.prototype.onItemsChange = function () {
 
 
 };
-
 Player.prototype.EquipmentFactory = function (eq,pushToCargo) {
 
         var equipment =
@@ -856,20 +1043,14 @@ Player.prototype.grabItems = function () {
                 if(m>0) {
                     grabbedItems++;
                     this.putItemToCargo(this.itemsToGrabToCargo[i]);
-                    this.game.onPlayerInventoryChanged.dispatch();
+                    this.game.onPlayerInventoryChanged.dispatch(this);
                 }
 
             }
             else
             {
-                this.game.userInterface.labels.labelCargo.style.backgroundColor = "#ff9300";
-                this.game.userInterface.labels.labelCargo.style.fill = "#030329";
-                this.game.userInterface.labels.labelCargo.text+=" ";
-                this.game.time.events.add(500, function () {
-                    this.game.userInterface.labels.labelCargo.style.backgroundColor = "";
-                    this.game.userInterface.labels.labelCargo.style.fill = "#ddd";
-                    this.game.userInterface.labels.labelCargo.text+=" ";
-                },this,this);
+                this.game.onCargoFull.dispatch();
+
             }
 
         };
@@ -877,12 +1058,12 @@ Player.prototype.grabItems = function () {
         if (grabbedItems>0)
 
         {
-            console.log("grabbed ",grabbedItems);
-            console.log("in cargo ",this.cargoItemsGroup.length);
+            //console.log("grabbed ",grabbedItems);
+            //console.log("in cargo ",this.cargoItemsGroup.length);
 
-            this.onItemsChange();
-            this.game.onPlayerInventoryChanged.dispatch();
-            //this.game.userInterface.shipMenu.shipCargo.populateGrid(this.cargoItemsGroup);
+            //this.calcVolumeMass();
+            this.game.onPlayerInventoryChanged.dispatch(this);
+
         }
         this.itemsToGrabToCargo.length=0;
 
@@ -900,8 +1081,9 @@ Player.prototype.dropItem = function (item) {
         item.b.scale.set(item.originalSize);
         item.b.sendToBack();
 
-        this.onItemsChange();
+        this.calcVolumeMass();
         this.calcEquipmentDependedParams();
+       // this.game.onPlayerInventoryChanged.dispatch(this);
 
 
     };
@@ -911,11 +1093,10 @@ Player.prototype.Destruct = function () {
     this.game.onPlayerDead.dispatch();
 
     };
-
 Player.prototype.installItem = function (item) {
         var ship = this;
 
-        var status="";
+
         var itemCfg = item.config;
         for (var s in ship.eq.hull.equipmentSlots)
         {
@@ -929,7 +1110,7 @@ Player.prototype.installItem = function (item) {
                         ship.eq[itemCfg.type.name] = item.config;
                         this.installedEquipmentGroup.add(item.b);
                         this.calcEquipmentDependedParams();
-                        return "ok";
+                        return true;
 
 
                 }
@@ -954,7 +1135,7 @@ Player.prototype.installItem = function (item) {
                     ship.eq[itemCfg.type.name] = item.config;
                     this.installedEquipmentGroup.add(item.b);
                     this.calcEquipmentDependedParams();
-                    return "ok";
+                    return true;
 
 
                 }
@@ -962,37 +1143,33 @@ Player.prototype.installItem = function (item) {
             }
 
         }
-        return "нет подходящих слотов";
+        return false;
 
 
 
 
     };
 Player.prototype.uninstallItem = function (item) {
-        // console.log("initiating uninstall for ", item);
+
         var ship = this;
         var itemCfg = item.config;
-        // console.log("enum slots");
+
         for (var s in ship.eq.hull.equipmentSlots)
         {
 
-             // console.log("slots: "+ s +" "+ ship.eq.hull.equipmentSlots[s].occupied);
-            // if(ship.eq.hull.equipmentSlots[s].occupied) {
-            //     console.log("installed", ship.eq.hull.equipmentSlots[s].installedEquipment);
-            //     console.log("itme ", item);
-            // }
+
 
             if ((ship.eq.hull.equipmentSlots[s].installedEquipment)===
                 (item.b ))
             {
-                //console.log("match ", item.parentObject);
+
                 ship.eq.hull.equipmentSlots[s].occupied = false;
                 ship.eq.hull.equipmentSlots[s].installedEquipment = null;
 
 
                 var t = ship.eq.hull.equipmentSlots[s].type.name;
                 ship.eq[itemCfg.type.name] = null;
-                console.log("uninstalled", itemCfg.type.name);
+
 
             }
 
@@ -1000,7 +1177,7 @@ Player.prototype.uninstallItem = function (item) {
 
         this.installedEquipmentGroup.remove(item.b);
         this.cargoItemsGroup.add(item.b);
-        this.onItemsChange();
+        this.calcVolumeMass();
         this.calcEquipmentDependedParams();
 
 
@@ -1045,7 +1222,7 @@ Player.prototype.sellItem = function (items,price) {
                 this.installedEquipmentGroup.remove(items);
             }
         this.money+=price;
-        this.onItemsChange();
+        this.calcVolumeMass();
 
     };
 Player.prototype.InitShipMenu = function () {
@@ -1115,7 +1292,6 @@ Player.prototype.checkItemReadyToGrab = function (item) {
         < this.grabRadius*this.grabRadius);
 
     };
-
 Player.prototype.fillFuel = function () {
 
         if(this.planetLanded!==undefined && this.planetLanded.pricesSell.fuel) {
@@ -1206,47 +1382,6 @@ if(this.game.input.enabled && !this.isDead) {
 
 }
 };
-Player.prototype.checkBulletsForHits = function(gameObjects)    {
-
-    for (var i = 0,j = this.weapon.bulletsAmountinPool;i<j;i++ ) {
-        var b = this.weapon.bullets[i];
-        if(b.visible)
-        {
-            gameObjects.forEach(function (gameObject) {
-
-
-                if (gameObject.b.body !== null) {
-
-                    if (b.armed
-                        && Phaser.Rectangle.intersects(gameObject.b.getBounds(),
-                            b.getBounds())) {
-
-                        if (gameObject.objType === 'asteroid') {
-
-                            if(((gameObject.b.x - b.x)*(gameObject.b.x - b.x)+(gameObject.b.y - b.y)*(gameObject.b.y - b.y)) < gameObject.squaredRadius) {
-
-                                gameObject.getDamage(b.weapon);
-
-                                if(gameObject.b.game!=null && gameObject.b.game.effectsEnabled) {
-                                    gameObject.b.game.damageEmiter.x = b.x;
-                                    gameObject.b.game.damageEmiter.y = b.y;
-                                    gameObject.b.game.damageEmiter.start(true, 500, null, 5);
-                                }
-                                b.init();
-                                if (gameObject.health < 0) {
-                                    gameObject = {};
-                                }
-                            }
-                        }
-                    }
-                }
-
-            })
-        }
-    }
-
-
-};
 Player.prototype.controlByMouse = function (pointer) {
 
 
@@ -1260,7 +1395,7 @@ Player.prototype.postUpdate = function () {
             }
         }
         this.oldVel = this.vel;
-        this.isThrottling=false;
+
 
 
     };
@@ -1270,7 +1405,7 @@ Player.prototype.sqaredDistance  = function (x, y) {
 
     };
 Player.prototype.updateRadar = function (miniMap) {
-    this.game.gameObjects.forEach(function (gameObject) {
+    this.game.spaceObjects.forEach(function (gameObject) {
         if(!this.knownObjects.includes(gameObject) && this.sqaredDistance(gameObject.b.x,gameObject.b.y)<this.radarRadius)
         {
             this.knownObjects.push(gameObject);

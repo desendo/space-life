@@ -1,6 +1,8 @@
 var Interface = {
     constructor: function (sizes,game) {
+
         this.game = game;
+        this.game.interfaceGroup = game.add.group();
 
         this.sizes = sizes;
         this.status = '';
@@ -14,16 +16,25 @@ var Interface = {
 
         this.game.onPlayerDamage.add(this.updateIndicators,this);
         this.game.onPlayerInventoryChanged.add(this.shipMenu.data.InventoryChangeHandler,this);
+        this.game.onCargoFull.add(function () {
+            if(!this.labels.labelCargo.isBlinking) {
+                this.labels.blinkLabel(this.labels.labelCargo);
+            }
+        },this);
+
         return this;
     },
+
     updateIndicators: function (params) {
 
 
-        if(params.hullDamage!==undefined)
+        if(params.hull!==undefined)
         {
-            var dmg =params.hullDamage;
-            this.labels.hullBar.setHealth(this.labels.hullBar.hp-dmg);
+
+            this.labels.hullBar.setHealth(params.hull);
         }
+
+
     },
     MouseTooltip: function (parent) {
         this.game = parent.game;
@@ -168,7 +179,7 @@ var Interface = {
             }
         });
 
-        zones.data.zonesGroup = this.game.add.group();
+        zones.data.zonesGroup = this.game.add.group(this.game.interfaceGroup );
         zones.data.shipCargoGroup = {};
         zones.data.installedEquipmentGroup = {};
         var  xPadding = (this.game.camera.width-w)/1.1;
@@ -251,7 +262,7 @@ var Interface = {
             this.avatar.customScale = this.w/this.avatar.width;
             this.avatar.scale.set(this.avatar.customScale);
             this.sprite.addChild(this.avatar);
-            zones.data.installedEquipmentGroup = game.add.group();
+
             zones.data.installedEquipmentGroup = ship.installedEquipmentGroup;
             game.world.bringToTop(zones.data.installedEquipmentGroup);
 
@@ -296,7 +307,7 @@ var Interface = {
 
         };
         zones.shipView.updateShipView = function (ship) {
-        //    zones.data.installedEquipmentGroup = ship.installedEquipmentGroup;
+            zones.data.installedEquipmentGroup = ship.installedEquipmentGroup;
             for (var i = 0; i < zones.data.installedEquipmentGroup.children.length; i++)
             {
                 this.addItem( zones.data.installedEquipmentGroup.children[i],i);
@@ -331,7 +342,13 @@ var Interface = {
 
         };
         zones.data.InventoryChangeHandler = function () {
+            console.log(arguments);
+            console.log("zones.data.InventoryChangeHandler ");
+            var ship = arguments[0];
 
+            this.shipMenu.shipCargo.populateGrid(ship);
+
+            this.shipMenu.shipView.updateShipView(ship);
 
         };
     //    zones.shipInfo.updateShipView(ship);
@@ -343,7 +360,7 @@ var Interface = {
                 item.scale.set(item.parentObject.originalSize || 2);
                 ship.uninstallItem(item.parentObject);
                 ship.dropItem(item.parentObject);
-                this.game.onPlayerInventoryChanged.dispatch();
+                this.game.onPlayerInventoryChanged.dispatch(ship);
 
             }
             if(zones.data.detectZone(item)==='shipInfo') {
@@ -355,23 +372,25 @@ var Interface = {
             if(zones.data.detectZone(item)==='shipView'  && item.parentObject.originZone==='shipCargo') {
                 console.log("installing drag drop from cargo", item);
                 var result = ship.installItem(item.parentObject);
-                if (result!=="ok")
+                if (result)
                 {
+                    console.log(result);
+
+                    ship.cargoItemsGroup.remove(item);
+                    ship.installedEquipmentGroup.add(item);
+                    //ship.calcVolumeMass();
+                    this.game.onPlayerInventoryChanged.dispatch(ship);
+
+                }
+                else
+                {
+
                     console.log(result);
                     game.userInterface.pilot.say(result|| "Эээ...че то не то");
 
                     item.x =item.parentObject.dragStart.x;
                     item.y=item.parentObject.dragStart.y;
 
-                }
-                else
-                {
-                    console.log(result);
-
-                    ship.cargoItemsGroup.remove(item);
-                    ship.installedEquipmentGroup.add(item);
-                    //ship.onItemsChange();
-                    this.game.onPlayerInventoryChanged.dispatch();
 
                 }
 
@@ -424,8 +443,9 @@ var Interface = {
 
         };
 
-        zones.shipCargo.populateGrid = function (cargoItemsGroup) {
+        zones.shipCargo.populateGrid = function (ship) {
 
+            var cargoItemsGroup = ship.cargoItemsGroup;
 
             for (var i = 0; i < cargoItemsGroup.children.length; i++)
             {
@@ -577,9 +597,9 @@ var Interface = {
         var  configArmorBar = {
             width: 130,
             height: 14,
-            x: 129,
-            y: 400,
-            maxHP:616,
+            x: labels.game.camera.width-65,
+            y: labels.game.camera.height-150-14-10,
+            maxHP:150,
             bg: {
                 color: '#292536'
             },
@@ -589,13 +609,25 @@ var Interface = {
             animationDuration: 200,
             flipped: false
         };
-
         labels.hullBar = new HealthBar(labels.game, configArmorBar);
         labels.hullBar.setFixedToCamera(true);
-        //labels.hullBar.setAnchor(0,1);
-        //labels.hullBar.setPercent(38);
-        labels.hullBar.setHealth();
+        labels.hullBar.setHealth(150);
 
+        labels.blinkLabel=function (label) {
+            label.isBlinking = true;
+            var oldBack = label.style.backgroundColor;
+            var oldFill = label.style.fill;
+
+            label.style.backgroundColor = "#ff9300";
+            label.style.fill = "#030329";
+            label.text+=" ";
+            labels.game.time.events.add(500, function () {
+                label.style.backgroundColor = oldBack;
+                label.style.fill = oldFill;
+                label.text+=" ";
+                label.isBlinking = false;
+            },this,this);
+        };
         return labels;
     },
     resetFontBug : true,
@@ -911,7 +943,7 @@ var Interface = {
         miniMap.unitDots.clear();
 
         if(miniMap.enabled && ship.eq.radar.radius!==undefined && ship.eq.radar.radius>0) {
-            this.game.gameObjects.forEach(function (object) {
+            this.game.spaceObjects.forEach(function (object) {
 
                 var unitMiniX = (object.b.x - ship.b.x) * miniMap.resolution * miniMap.zoom + miniMap.UIframe.width / 2;
                 var unitMiniY = (object.b.y - ship.b.y) * miniMap.resolution * miniMap.zoom + miniMap.UIframe.height / 2;
