@@ -81,6 +81,7 @@
         },
 
         preload: function () {
+            this.game.load.shader('galaxy', 'assets/galaxy.frag');
 
             this.game.time.advancedTiming = true;
 
@@ -98,7 +99,10 @@
             this.load.spritesheet('shipButton',assets+'shipButtons.png',48,16,16,0,0);
             this.load.spritesheet('pilotback',assets+'pilotback.png',32,32,6,0,0);
             this.load.spritesheet('sidethrust1',assets+'side_thrust1.png',5,5,5,0,0);
+
+
             this.load.spritesheet('asteroids1',assets+'asteroids1.png',32,32,8,0,0);
+            this.load.spritesheet('glow',assets+'glow.png',32,32,4,0,0);
             this.load.spritesheet('buttons',assets+'buttons.png',75,25,9);
             this.load.image('button',assets+'button.png');
             this.load.spritesheet('button1',assets+'button1.png',96,32,3);
@@ -129,7 +133,12 @@
         },
 
         create: function () {
-
+            this.back = this.game.add.sprite(0,0);
+            this.back.fixedToCamera = true;
+            this.back.scale.set(this.game.camera.width/this.back.width,this.game.camera.height/this.back.width);
+            this.game.galaxyFilter = new Phaser.Filter(this.game, null, this.game.cache.getShader('galaxy'));
+            this.game.galaxyFilter.setResolution(this.game.camera.width, this.game.camera.height);
+            this.back.filters = [this.game.galaxyFilter];
             if(document.getElementById("loading"))
                 document.getElementById("loading").parentNode.removeChild(document.getElementById("loading"));//когда все загрузится
 
@@ -159,6 +168,7 @@
 
         update: function () {
 
+            this.game.galaxyFilter.update();
             if(!this.textupdated)
             {
                 this.newgameT.text+=" ";

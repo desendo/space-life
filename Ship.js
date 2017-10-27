@@ -98,6 +98,16 @@ Ship.prototype.compensate = function(){
     }
 
 };
+Ship.prototype.Burn = function(){
+
+    if(this.vel > 20) {
+
+    }
+
+
+
+
+};
 
 Ship.prototype.update = function () {
 
@@ -253,7 +263,24 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     //this.SetStartEq();
     this.initSecondaryEngines();
     this.addMiniHud(1);
-    //Ship.prototype.constructor.apply(this,arguments);
+
+
+    this.b.body.onBeginContact.add(this.contactHandler);
+
+};
+Ship.prototype.contactHandler = function () {
+
+    if(arguments[0].parentObject) {
+        var pos = arguments[4][0].bodyA.position;
+        var pt = arguments[4][0].contactPointA;
+        var game = arguments[0].parentObject.game;
+        var cx = game.physics.p2.mpxi(pos[0] + pt[0]);
+        var cy = game.physics.p2.mpxi(pos[1] + pt[1]);
+        game.damageEmiter.x = cx;
+        game.damageEmiter.y = cy;
+        game.damageEmiter.start(true, 500,100,20);
+        console.log("collision at:" + cx + ", " + cy);
+    }
 };
 Ship.prototype.Destruct = function()
 {
@@ -315,7 +342,7 @@ Ship.prototype.checkBulletsForHits = function(gameObjects)    {
 
                             if(((gameObject.b.x - b.x)*(gameObject.b.x - b.x)+(gameObject.b.y - b.y)*(gameObject.b.y - b.y)) < gameObject.squaredRadius) {
 
-                                gameObject.getDamage(b);
+                                gameObject.getDamage(b.weapon.damagePerShot,b.x,b.y);
 
                                 if(gameObject.b.game!=null && gameObject.b.game.effectsEnabled) {
                                     gameObject.b.game.damageEmiter.x = b.x;
@@ -867,7 +894,8 @@ Player.prototype.updateRelationsToPlanets = function () {
 
 
 
-                    if(this.isLanded) {
+                    if(this.isLanded && this.planetLanded!==null) {
+
                         this.globalStatus = "На поверхности планеты " + this.planetLanded.name;
 
                         this.b.exists= false;
@@ -922,11 +950,10 @@ Player.prototype.updateRelationsToPlanets = function () {
 
 };
 Player.prototype.colCallback = function (shipBody,collidedBody) {
-    console.log(arguments);
+
     var pilot =shipBody.parentObject.game.userInterface.pilot;
     if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='planet') {
         shipBody.parentObject.planetLanded = collidedBody.parentObject;
-        //console.log(shipBody.parentObject.oldVel/10+" км/сек");
 
         if(shipBody.parentObject.oldVel/10>10) {
             pilot.hpbar.setHealth(pilot.hpbar.hp - Math.round(shipBody.parentObject.oldVel/25));
@@ -945,12 +972,11 @@ Player.prototype.colCallback = function (shipBody,collidedBody) {
     }
     if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='asteroid') {
         shipBody.parentObject.planetLanded = collidedBody.parentObject;
-        //console.log("астероид "+ shipBody.parentObject.oldVel/10+" км/сек");
         if(shipBody.parentObject.oldVel/10>10) {
             pilot.hpbar.setHealth(pilot.hpbar.hp - Math.round(shipBody.parentObject.oldVel/50));
             pilot.updateDamagePicture();
             pilot.say("боль");
-            //todo сделать систему повреждения пилота и корабля в зависимости от пилота, корабля, скорости и других параметров
+            //todo сделать систему рассчета повреждения пилота и корабля в зависимости от пилота, корабля, скорости и других параметров
         }
         else
         {
@@ -962,7 +988,7 @@ Player.prototype.colCallback = function (shipBody,collidedBody) {
     var mass = collidedBody.mass;
     if(collidedBody.mass>100000)
     {
-        mass = shipBody.mass*100;
+        mass = shipBody.mass*50;
 
     }
     var collisionEnergy = Math.sqrt((collidedBody.velocity.x - shipBody.velocity.x)*(collidedBody.velocity.x - shipBody.velocity.x)/100+
@@ -970,9 +996,7 @@ Player.prototype.colCallback = function (shipBody,collidedBody) {
         )*mass;
 
     shipBody.parentObject.DamageHandler(Math.floor(collisionEnergy));
-    shipBody.parentObject.game.explosionEmiter.x = shipBody.parentObject.b.x;
-    shipBody.parentObject.game.explosionEmiter.y = shipBody.parentObject.b.y;
-    shipBody.parentObject.game.explosionEmiter.start(true, 500, null, 30);
+
 
 
 
@@ -1089,9 +1113,11 @@ Player.prototype.dropItem = function (item) {
     };
 Player.prototype.Destruct = function () {
     Ship.prototype.Destruct.apply(this, arguments);
+    this.game.explosionEmiter.x = this.b.x;
+    this.game.explosionEmiter.y = this.b.y;
+    this.game.explosionEmiter.start(true, 500, null, 30);
 
     this.game.onPlayerDead.dispatch();
-
     };
 Player.prototype.installItem = function (item) {
         var ship = this;

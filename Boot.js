@@ -4,7 +4,7 @@
 /* global Phaser */
 
 var SpaceLifeGame = {
-    version : "v "+"0.3.0.0",
+    version : "v "+"0.3.5.0",
     changelog:
 
 
