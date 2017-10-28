@@ -752,7 +752,7 @@ var Interface = {
         var x = pilot.game.camera.view.width;
         var y = pilot.game.camera.view.height;
         var w = 130;
-        var h = 150;
+        var h = 130;
         var frame = pilot.game.add.graphics(0, 0);
         frame.lineStyle(1, interfaceColor1,1);
         frame.beginFill('0x000000', 1);
@@ -764,11 +764,16 @@ var Interface = {
         pilot.ui = frame;
         pilot.ui.fixedToCamera = true;
 
-        pilot.b = pilot.game.add.sprite(x,y-20,'pilotback',0);
+        pilot.b = pilot.game.add.sprite(x,y,'pilotback',0);
+
+
         pilot.b.animations.add('blink',[0,1,2,3,4,5],4,true);
         pilot.b.animations.play('blink',6,true,false);
         pilot.s = pilot.game.add.sprite(x,y,pilotSprite,0);
+
+
         pilot.d = pilot.game.add.sprite(x,y,'grahemdamages',0);
+
         pilot.s.animations.add('blink',[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,3],20,true);
 
         pilot.s.animations.play('blink',5,true,false);
@@ -833,6 +838,16 @@ var Interface = {
 
         };
 
+        pilot.disConnect = function () {
+            pilot.s.visible = false;
+            pilot.d.visible = false;
+            pilot.b.filters = [pilot.game.noiseFilter];
+        };
+        pilot.reConnect = function () {
+            pilot.s.viible = true;
+            pilot.d.visible = true;
+            pilot.b.filters = [''];
+        };
         return pilot;
     },
     MiniMap : function (size,parent) {
@@ -943,46 +958,51 @@ var Interface = {
         miniMap.unitDots.clear();
 
         if(miniMap.enabled && ship.eq.radar.radius!==undefined && ship.eq.radar.radius>0) {
-            this.game.spaceObjects.forEach(function (object) {
+            for(var i = 0,j=this.game.spaceObjects.length;i<j;i++)
+            {
+                var object =this.game.spaceObjects[i];
+                if(object.b.exists) {
 
-                var unitMiniX = (object.b.x - ship.b.x) * miniMap.resolution * miniMap.zoom + miniMap.UIframe.width / 2;
-                var unitMiniY = (object.b.y - ship.b.y) * miniMap.resolution * miniMap.zoom + miniMap.UIframe.height / 2;
-                unitMiniX = Math.round(unitMiniX);
-                unitMiniY = Math.round(unitMiniY);
+                    var unitMiniX = (object.b.x - ship.b.x) * miniMap.resolution * miniMap.zoom + miniMap.UIframe.width / 2;
+                    var unitMiniY = (object.b.y - ship.b.y) * miniMap.resolution * miniMap.zoom + miniMap.UIframe.height / 2;
+                    unitMiniX = Math.round(unitMiniX);
+                    unitMiniY = Math.round(unitMiniY);
 
-                if (unitMiniX < miniMap.UIframe.width && unitMiniX > 0 && unitMiniY < miniMap.UIframe.height && unitMiniY > 0) {
-                    //if(true ) {
-                    if (object.objType === 'planet') {
+                    if (unitMiniX < miniMap.UIframe.width && unitMiniX > 0 && unitMiniY < miniMap.UIframe.height && unitMiniY > 0) {
+                        //if(true ) {
+                        if (object.objType === 'planet') {
 
-                        miniMap.unitDots.beginFill(mapColorPlanet, 0.5);
-                        miniMap.unitDots.drawCircle(unitMiniX, unitMiniY + miniMap.localY, 8);
+                            miniMap.unitDots.beginFill(mapColorPlanet, 0.5);
+                            miniMap.unitDots.drawCircle(unitMiniX, unitMiniY + miniMap.localY, 8);
 
-                    }
-                    else if (object.objType === 'asteroid') {
-                        if (object.health !== -1) {
-                            miniMap.unitDots.beginFill(mapColorAsteroidField, 0.5);
-                            miniMap.unitDots.drawRect(unitMiniX, unitMiniY + miniMap.localY, 2, 2);
+                        }
+                        else if (object.objType === 'asteroid') {
+                            if (object.health !== -1) {
+                                miniMap.unitDots.beginFill(mapColorAsteroidField, 0.5);
+                                miniMap.unitDots.drawRect(unitMiniX, unitMiniY + miniMap.localY, 2, 2);
+                            }
+
+                        }
+                        else if (object.objType === 'player') {
+
+                            miniMap.unitDots.beginFill(mapColorPlayer, 1);
+                            miniMap.unitDots.drawRect(unitMiniX - 1, unitMiniY + miniMap.localY - 1, 4, 4);
+
+                        }
+                        else if (object.objType === 'ship') {
+
+                            miniMap.unitDots.beginFill(mapColorPlayer, 0.5);
+                            miniMap.unitDots.drawRect(unitMiniX - 1, unitMiniY + miniMap.localY - 1, 4, 4);
+
                         }
 
-                    }
-                    else if (object.objType === 'player') {
-
-                        miniMap.unitDots.beginFill(mapColorPlayer, 1);
-                        miniMap.unitDots.drawRect(unitMiniX - 1, unitMiniY + miniMap.localY - 1, 4, 4);
+                        miniMap.unitDots.endFill();
 
                     }
-                    else if (object.objType === 'ship') {
-
-                        miniMap.unitDots.beginFill(mapColorPlayer, 0.5);
-                        miniMap.unitDots.drawRect(unitMiniX - 1, unitMiniY + miniMap.localY - 1, 4, 4);
-
-                    }
-
-                    miniMap.unitDots.endFill();
-
                 }
 
-            });
+            }
+
         }
         else
         {

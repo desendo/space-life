@@ -50,6 +50,7 @@ SpaceLifeGame.MainState.prototype = {
         this.game.wheelDelta = {};
         this.game.wheelDelta.val =0;
         this.game.wheelDelta.valueToChange = null;
+        this.game.load.shader('noise', 'assets/shader1.frag');
 
         this.game.wheelDelta.setVal = function () {
             this.valueToChange =arguments;
@@ -77,7 +78,18 @@ SpaceLifeGame.MainState.prototype = {
     create:function () {
 
 
-        this.game.gameObjectLayer = this.game.add.group();
+
+        this.game.noiseFilter = new Phaser.Filter(game, null, game.cache.getShader('noise'));
+        this.game.noiseFilter.setResolution(64, 64);
+
+
+
+
+
+
+
+
+        this.game.spaceObjectsLayer = this.game.add.group();
         this.game.time.advancedTiming = true;
         this.game.world.setBounds(0, 0, worldSize, worldSize);
         this.game.worldSize = worldSize;
@@ -102,8 +114,8 @@ SpaceLifeGame.MainState.prototype = {
         else {
             planet = new Planet(worldSize / 2, worldSize / 2, 18, 'planet', 1500, 'Земля 2', game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup], game);
             planet2 = new Planet(worldSize / 2 - 2000, worldSize / 2 + 4000, 12, 'planet', 900, 'Земля 3', game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup], game);
-            this.game.gameObjectLayer.add(planet.b);
-            this.game.gameObjectLayer.add(planet2.b);
+            this.game.spaceObjectsLayer.add(planet.b);
+            this.game.spaceObjectsLayer.add(planet2.b);
             this.game.planets.push(planet);
             this.game.planets.push(planet2);
             planet.b.body.setMaterial(planetMaterial);
@@ -114,7 +126,7 @@ SpaceLifeGame.MainState.prototype = {
             var pos = new Phaser.Point(planets[0].x, (planets[0].y - planets[0].b.width * 0.56 - 300));
 
             ship = new Player(pos.x, pos.y, game, Equipment.Hulls.Ship1, game.playerColGroup);
-            this.game.gameObjectLayer.add(ship.b);
+            this.game.spaceObjectsLayer.add(ship.b);
             ship.SetStartEq();
             // game.npc1 = new NPC(pos.x - 40, pos.y - 60, game, Equipment.Hulls.Ship0, game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup]);
             // game.npc2 = new NPC(pos.x + 30, pos.y - 40, game, Equipment.Hulls.Ship0, game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup]);
@@ -146,15 +158,11 @@ SpaceLifeGame.MainState.prototype = {
             console.log("ship ",ship);
             console.log("this.game.interfaceGroup.z",this.game.interfaceGroup.z);
             console.log("this.game.world.z",this.game.world.z);
-            console.log("this.game.gameObjectLayer",this.game.gameObjectLayer.z);
-
-
-            //this.game.world.z=100;
+            console.log("this.game.spaceObjectsLayer",this.game.spaceObjectsLayer.z);
 
 
         }
 
-        //todo перенести эмитеры повреждений в alt.weapon. создать набор стандартных эмитеров, менять их при смете типа повреждения
         this.game.damageEmiter = this.game.add.emitter(ship.b.x,ship.b.y,30);
         this.game.damageEmiter.makeParticles('part');
         this.game.damageEmiter.gravity = 0;
@@ -163,13 +171,22 @@ SpaceLifeGame.MainState.prototype = {
 
 
 
-        this.game.explosionEmiter = this.game.add.emitter(ship.b.x,ship.b.y,30);
+        this.game.explosionEmiter = this.game.add.emitter(ship.b.x,ship.b.y,600);
         this.game.explosionEmiter.makeParticles('part');
         this.game.explosionEmiter.gravity = 0;
+        // this.game.explosionEmiter.minParticleSpeed=0.2;
+        // this.game.explosionEmiter.maxParticleSpeed=0.5;
         this.game.explosionEmiter.setAlpha(1, 0.5, 1500, Phaser.Easing.Linear.None,false);
         this.game.explosionEmiter.forEach(function(p) {p.tint ='0xffc200';},this);
 
+        this.game.landEmiter = this.game.add.emitter(ship.b.x,ship.b.y,30);
+        this.game.landEmiter.makeParticles('part');
+        this.game.landEmiter.gravity = 0;
+        this.game.landEmiter.setAlpha(1, 0.5, 1500, Phaser.Easing.Linear.None,false);
+        this.game.landEmiter.forEach(function(p) {p.tint ='0xffc200';},this);
+
         this.game.onPlayerDead.add(this.gameOver,this);
+        this.game.onPlayerDead.add(this.game.userInterface.pilot.disConnect,this);
 
 
 
@@ -197,7 +214,7 @@ SpaceLifeGame.MainState.prototype = {
     },
     update: function() {
 
-
+        this.game.noiseFilter.update();
         this.gameObjectsUpdate();
         this.optimizeRendering();
 
@@ -288,8 +305,8 @@ function createStarsBackground(starsBackground) {
     starsBackground.update = function () {
         this.tilePosition.x -= ship.b.body.velocity.x/200;
         this.tilePosition.y -= ship.b.body.velocity.y/200;
-
     };
+    game.spaceObjectsLayer.add(starsBackground);
 
 }
 
