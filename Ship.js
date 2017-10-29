@@ -78,18 +78,22 @@ Ship.prototype.consumeFuel = function (value) {
 Ship.prototype.compensate = function(){
 
 
-    if (this.vel > 4) {
+    if (this.vel > 2) {
+
+        var k = 1;
+        //if (this.vel < 5)        {            k=this.vel/10;        }
 
         if (Math.cos(this.turnAngle) > 0) {
-            this.backward(Math.cos(this.turnAngle),true);
-            if (this.vel > 4)
-                this.sideThrust(-Math.sin(this.turnAngle),true);
+            this.backward(Math.cos(this.turnAngle) * k ,true);
+
+                this.sideThrust(-Math.sin(this.turnAngle)* k ,true);
+
 
         }
         else
         {
-            this.forward(-Math.cos(this.turnAngle),true);
-            if (this.vel > 4) this.sideThrust(-Math.sin(this.turnAngle),true);
+            this.forward(-Math.cos(this.turnAngle)* k ,true);
+            this.sideThrust(-Math.sin(this.turnAngle)* k ,true);
         }
 
     }
@@ -282,8 +286,7 @@ Ship.prototype.contactHandler = function () {
         console.log("collision at:" + cx + ", " + cy);
     }
 };
-Ship.prototype.Destruct = function()
-{
+Ship.prototype.Destruct = function(){
 
     this.isDead=true;
     this.isThrottling = false;
@@ -734,7 +737,6 @@ function Player(x,y,game,hull,colGroup) {
 
 };
 Player.prototype = Object.create(Ship.prototype);
-
 Player.prototype.initHull = function (hull) {
     this.eq.hull = hull;
     this.cargoBayCap = hull.space;
@@ -809,7 +811,7 @@ Player.prototype.DamageHandler = function (dmg) {
 
 };
 Player.prototype.Land = function () {
-
+    console.log("land");
     this.isLanded = true;
 };
 Player.prototype.update = function () {
@@ -852,13 +854,7 @@ Player.prototype.updateRelationsToPlanets = function () {
 
 
             if (d <planet.gravDistSquared ) {
-                if(!this.added) {
-                    if(this.isLanded) {
 
-                        this.added = true;
-                    }
-
-                }
                 //var cross = -planet.dirToShip.x*this.dir.y -(-1*planet.dirToShip.y)*this.dir.x;
                 // var oldcross = planet.oldDirToShip.x*this.dir.y -(-1*planet.oldDirToShip.y)*this.dir.x;
                 // planet.deltaCross = (oldcross.toFixed(4) - cross.toFixed(4));
@@ -951,38 +947,9 @@ Player.prototype.updateRelationsToPlanets = function () {
 };
 Player.prototype.colCallback = function (shipBody,collidedBody) {
 
-    var pilot =shipBody.parentObject.game.userInterface.pilot;
     if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='planet') {
-        shipBody.parentObject.planetLanded = collidedBody.parentObject;
 
-        if(shipBody.parentObject.oldVel/10>10) {
-            pilot.hpbar.setHealth(pilot.hpbar.hp - Math.round(shipBody.parentObject.oldVel/25));
-            pilot.updateDamagePicture();
-            pilot.say("боль...");
-        }
-        else if (shipBody.parentObject.oldVel/10>4)
-        {
-            pilot.say("В пределах нормы");
-        }
-        else
-        {
-            pilot.say("Мягкая посадка");
-        }
         shipBody.parentObject.Land();
-    }
-    if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='asteroid') {
-        shipBody.parentObject.planetLanded = collidedBody.parentObject;
-        if(shipBody.parentObject.oldVel/10>10) {
-            pilot.hpbar.setHealth(pilot.hpbar.hp - Math.round(shipBody.parentObject.oldVel/50));
-            pilot.updateDamagePicture();
-            pilot.say("боль");
-            //todo сделать систему рассчета повреждения пилота и корабля в зависимости от пилота, корабля, скорости и других параметров
-        }
-        else
-        {
-
-            pilot.say("Трясет");
-        }
     }
 
     var mass = collidedBody.mass;

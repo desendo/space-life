@@ -113,7 +113,7 @@ SpaceLifeGame.MainState.prototype = {
         }
         else {
             planet = new Planet(worldSize / 2, worldSize / 2, 18, 'planet', 1500, 'Земля 2', game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup], game);
-            planet2 = new Planet(worldSize / 2 - 2000, worldSize / 2 + 4000, 12, 'planet', 900, 'Земля 3', game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup], game);
+            planet2 = new Planet(worldSize / 2 + 50000, worldSize / 2 + 4000, 12, 'planet', 900, 'Земля 3', game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup], game);
             this.game.spaceObjectsLayer.add(planet.b);
             this.game.spaceObjectsLayer.add(planet2.b);
             this.game.planets.push(planet);
@@ -281,7 +281,7 @@ SpaceLifeGame.MainState.prototype = {
     {
         for (var i= 0,j =spaceObjects.length; i<j;i++ )
         {
-            if(spaceObjects[i].update !== undefined)
+            if(spaceObjects[i].update !== undefined && spaceObjects[i].b.visible && spaceObjects[i].b.renderable)
                 spaceObjects[i].update();
         }
     }
@@ -383,8 +383,8 @@ function generateAsteroids (asteroidsInField,
             field.x=0;
             field.y=0;
 
-            field.x = randomInteger(worldSize*0.5-2000,worldSize*0.5+2000);
-            field.y = randomInteger(worldSize*0.5-2000,worldSize*0.5+2000);
+            field.x = randomInteger(worldSize*0.5-8000,worldSize*0.5+8000);
+            field.y = randomInteger(worldSize*0.5-8000,worldSize*0.5+8000);
             field.asteroids = [];
             field.radius = 150;
             var asteroidsAmount = randomInteger(asteroidsInField*0.7,asteroidsInField*1.3);
