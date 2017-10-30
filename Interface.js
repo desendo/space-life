@@ -749,6 +749,7 @@ var Interface = {
         var pilot={};
         pilot.parent = parent;
         pilot.game = parent.game;
+        pilot.hp = 100;
         var x = pilot.game.camera.view.width;
         var y = pilot.game.camera.view.height;
         var w = 130;
@@ -812,9 +813,9 @@ var Interface = {
             flipped: false
         };
 
-        pilot.hpbar = new HealthBar(pilot.game, config);
-        pilot.hpbar.setFixedToCamera(true);
-        pilot.hpbar.setPercent(100);
+        //pilot.hpbar = new HealthBar(pilot.game, config);
+        //pilot.hpbar.setFixedToCamera(true);
+        //pilot.hpbar.setPercent(100);
 
         pilot.say = function (text) {
             pilot.parent.labels.labelSay.text = text;
@@ -823,17 +824,17 @@ var Interface = {
             },this,this);
         };
         pilot.updateDamagePicture = function () {
-            if(pilot.hpbar.percents==100)
+            if(pilot.hp==100)
                 pilot.d.animations.play('d0',6,true,false);
-            if(pilot.hpbar.percents<100)
+            if(pilot.hp<100)
                 pilot.d.animations.play('d1',6,true,false);
-            if(pilot.hpbar.percents<80)
+            if(pilot.hp<80)
                 pilot.d.animations.play('d2',6,true,false);
-            if(pilot.hpbar.percents<50)
+            if(pilot.hp<50)
                 pilot.d.animations.play('d3',6,true,false);
-            if(pilot.hpbar.percents<25)
+            if(pilot.hp<25)
                 pilot.d.animations.play('d4',6,true,false);
-            if(pilot.hpbar.percents<=10)
+            if(pilot.hp<=10)
                 pilot.d.animations.play('d5',6,true,false);
 
         };

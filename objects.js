@@ -247,6 +247,8 @@ Planet.prototype.update = function () {
           }
           if (go.b.exists === true && d < this.atmRadiusSquared/2) {
 
+              //go.inAtmo = true;
+
               go.affectByAtmo();
 
 

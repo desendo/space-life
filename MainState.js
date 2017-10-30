@@ -155,10 +155,7 @@ SpaceLifeGame.MainState.prototype = {
 
             ship.InitShipMenu();
             this.game.interfaceGroup.z=-100;
-            console.log("ship ",ship);
-            console.log("this.game.interfaceGroup.z",this.game.interfaceGroup.z);
-            console.log("this.game.world.z",this.game.world.z);
-            console.log("this.game.spaceObjectsLayer",this.game.spaceObjectsLayer.z);
+
 
 
         }
