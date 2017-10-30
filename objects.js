@@ -1,57 +1,5 @@
 //game.enemies = new EnemyGroup(planets[0].x,(planets[0].y-planets[0].b.width*0.56-500),300,0,0.05,true,game);
 
-EnemyGroup = function(positionX, positionY, radius, angle, rotateSpeed, clockwise,game) {
-
-    Phaser.Group.call(this, game);
-    this.position = {x:positionX, y:positionY};
-    this.radius   = radius;
-    this.pivot.x  = positionX;
-    this.pivot.y  = positionY;
-    this.angle    = angle;
-
-    this.rotateSpeed = rotateSpeed;
-    this.clockwise   = clockwise;
-
-    this.addChild(new Enemy(this.position, this.radius, 0.4,game));
-    this.addChild(new Enemy(this.position, this.radius, 0.4,game));
-    this.addChild(new Enemy(this.position, this.radius, 0.4,game));
-    this.addChild(new Enemy(this.position, this.radius, 0.4,game));
-
-    this.update = function(){
-    this.children.forEach(function (ch) {
-        ch.update();
-    })
-
-    }
-};
-
-EnemyGroup.prototype = Object.create(Phaser.Group.prototype);
-EnemyGroup.prototype.constructor = EnemyGroup;
-
-
-Enemy = function(position, radius, scale,game) {
-
-    Phaser.Sprite.call(this, game, position.x, position.y, 'ship1');
-    game.physics.p2.enable(this, true);
-    this.body.setCircle(7);
-    this.scale.setTo(scale);
-    this.anchor.setTo(0.5);
-    this.body.setCollisionGroup(game.spaceBodiesColGroup);
-    this.body.static = true;
-    this.body.collides(game.playerColGroup);
-    this.radius = radius;
-    this.angle = 10;
-    game.add.existing(this);
-
-    this.update = function(){
-
-
-    }
-};
-
-Enemy.prototype = Object.create(Phaser.Sprite.prototype);
-Enemy.prototype.constructor = Enemy;
-
 
 var Alt = Alt || {};
 Alt.Bullet = function (game, x, y, key, frame,origin,weapon) {
@@ -161,6 +109,24 @@ Alt.Weapon.prototype.destruct = function () {
 
 var Planet = function (x,y,size,sprite,gravityDistance,name="Земля 2",colGroup,colGroups,game) {
   this.init(x,y,size,sprite,gravityDistance,name="Земля 2",colGroup,colGroups,game);
+  this.planetType = this.mars;
+};
+Planet.prototype = {
+
+
+    earth: {
+        water: "0x"+"#52a8fd".slice(1, 7),
+        soil: "0x"+"#449933".slice(1, 7),
+        clouds: "0x"+"#cadee3".slice(1, 7),
+        mounts: "0x"+"#346925".slice(1, 7),
+        ice: "0x"+"#def0fc".slice(1, 7)
+
+    },
+    mars: {
+        sand: "0x"+"#c45134".slice(1, 7),
+        darksand: "0x"+"#bb2720".slice(1, 7)
+
+    }
 };
 Planet.prototype.init = function (x,y,size,sprite,gravityDistance,name="Земля 2",colGroup,colGroups,game) {
 
@@ -221,6 +187,8 @@ Planet.prototype.init = function (x,y,size,sprite,gravityDistance,name="Земл
     this.atm = this.createAtmosphere();
     this.game.spaceObjectsLayer.add(this.atm);
     this.atmRadiusSquared = this.atmRadius*this.atmRadius;
+    // this.spr = this.game.add.sprite(this.x,this.y,this.generateSprite());
+    // this.spr.anchor.set(0.5);
 
 
 
@@ -260,7 +228,6 @@ Planet.prototype.createAtmosphere = function (atmRadius) {
 Planet.prototype.update = function () {
     var go ={};
     var d=0;
-
     for (var i = 0,j = this.game.spaceObjects.length;i <j; i++)
   {
 
@@ -294,10 +261,24 @@ Planet.prototype.update = function () {
           }
       }
   }
-   // console.log(num);
+};
+Planet.prototype.generateSprite= function () {
+
+    var d = 550;
+    var r = d/2;
+    var g = this.game.add.graphics(0,0);
+    g.beginFill(this.earth.water,1);
+    g.drawCircle(0,0,d);
+    g.beginFill(this.earth.soil,1);
+    g.drawPolygon([
+        new Phaser.Point(0,0),
+        new Phaser.Point(0,-r),
+        new Phaser.Point(Math.cos(20)*(r),Math.sin(20)*(-r))
+    ]);
+    g.endFill();
+    return g.generateTexture();
 
 };
-
 var Asteroid = {
 
     constructor: function (x,y,size,sprite,game)
@@ -425,7 +406,7 @@ var Asteroid = {
         this.b.exists = false;
          this.game.explosionEmiter.x = this.b.x;
          this.game.explosionEmiter.y = this.b.y;
-         this.game.explosionEmiter.start(true,500,50,100);
+         this.game.explosionEmiter.start(true,500,50,200);
     },
     spawnMaterial: function (x,y,materialVolume, materialType, obj) {
 
