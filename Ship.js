@@ -102,7 +102,7 @@ Ship.prototype.compensate = function(){
     }
 
 };
-Ship.prototype.Burn = function(){
+Ship.prototype.affectByAtmo = function(){
 
     if(this.vel > 20) {
 
@@ -528,9 +528,9 @@ Ship.prototype.rotateLeft = function () {
 };
 Ship.prototype.forward = function (q = 1,damping = false) {
 
-    if(!this.b.exists && !this.isDead)
+    if(this.isLanded && !this.isDead)
     {
-        this.b.exists =true;
+        this.Start();
     }
 
     if(this.fuel>0) {
@@ -810,9 +810,28 @@ Player.prototype.DamageHandler = function (dmg) {
 
 
 };
-Player.prototype.Land = function () {
-    console.log("land");
+Player.prototype.Land = function (planet = null) {
+
     this.isLanded = true;
+    this.b.exists = false;
+    this.b.alive = true;
+    this.b.visible = true;
+    this.planetLanded = planet;
+    this.isStarting = false;
+
+};
+Player.prototype.Start = function () {
+
+
+    this.isStarting = true;
+    this.isLanded = false;
+    this.b.exists = true;
+
+    this.game.time.events.add(1000, function () {
+        this.isStarting = false;
+    },this,this);
+    this.planetLanded = null;
+
 };
 Player.prototype.update = function () {
     Ship.prototype.update.apply(this);
@@ -892,6 +911,7 @@ Player.prototype.updateRelationsToPlanets = function () {
 
                     if(this.isLanded && this.planetLanded!==null) {
 
+
                         this.globalStatus = "На поверхности планеты " + this.planetLanded.name;
 
                         this.b.exists= false;
@@ -947,9 +967,9 @@ Player.prototype.updateRelationsToPlanets = function () {
 };
 Player.prototype.colCallback = function (shipBody,collidedBody) {
 
-    if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='planet') {
-
-        shipBody.parentObject.Land();
+    if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='planet')
+    {
+        shipBody.parentObject.Land(collidedBody.parentObject);
     }
 
     var mass = collidedBody.mass;
@@ -961,8 +981,8 @@ Player.prototype.colCallback = function (shipBody,collidedBody) {
     var collisionEnergy = Math.sqrt((collidedBody.velocity.x - shipBody.velocity.x)*(collidedBody.velocity.x - shipBody.velocity.x)/100+
             (collidedBody.velocity.y - shipBody.velocity.y)*(collidedBody.velocity.y - shipBody.velocity.y)/100
         )*mass;
-
-    shipBody.parentObject.DamageHandler(Math.floor(collisionEnergy));
+    if(!this.isStarting)
+        shipBody.parentObject.DamageHandler(Math.floor(collisionEnergy));
 
 
 
