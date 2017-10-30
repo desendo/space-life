@@ -81,6 +81,7 @@
         },
 
         preload: function () {
+            this.game.load.shader('galaxy', 'assets/galaxy.frag');
 
             this.game.time.advancedTiming = true;
 
@@ -98,10 +99,14 @@
             this.load.spritesheet('shipButton',assets+'shipButtons.png',48,16,16,0,0);
             this.load.spritesheet('pilotback',assets+'pilotback.png',32,32,6,0,0);
             this.load.spritesheet('sidethrust1',assets+'side_thrust1.png',5,5,5,0,0);
+
+
             this.load.spritesheet('asteroids1',assets+'asteroids1.png',32,32,8,0,0);
+            this.load.spritesheet('glow',assets+'glow.png',32,32,4,0,0);
             this.load.spritesheet('buttons',assets+'buttons.png',75,25,9);
             this.load.image('button',assets+'button.png');
             this.load.spritesheet('button1',assets+'button1.png',96,32,3);
+            this.load.spritesheet('spaceicons',assets+'spaceicons.png',16,16,5);
 
             this.load.image('planet',assets+'sprite_planet.png');
             this.load.image('laser',assets+'laser.png');
@@ -128,27 +133,25 @@
         },
 
         create: function () {
-
+            this.back = this.game.add.sprite(0,0);
+            this.back.fixedToCamera = true;
+            this.back.scale.set(this.game.camera.width/this.back.width,this.game.camera.height/this.back.width);
+            this.game.galaxyFilter = new Phaser.Filter(this.game, null, this.game.cache.getShader('galaxy'));
+            this.game.galaxyFilter.setResolution(this.game.camera.width, this.game.camera.height);
+            this.back.filters = [this.game.galaxyFilter];
             if(document.getElementById("loading"))
                 document.getElementById("loading").parentNode.removeChild(document.getElementById("loading"));//когда все загрузится
 
 
              this.version = this.game.add.text(20,0,SpaceLifeGame.version, fontLeft2);
              this.version.anchor.set(0);
-            // this.changelog = this.game.add.text(20,40,SpaceLifeGame.changelog, fontLeft);
-            // this.changelog.anchor.set(0);
+
 
             this.gameName = this.game.add.text(this.game.camera.width/2,this.game.camera.height/2-200,"Косможизнь", fontMenu1);
             this.gameName.anchor.set(0.5);
             this.counter = 0;
 
 
-
-            // this.gamePressToStart = this.game.add.text(this.game.camera.width,this.game.camera.height-60,"нажмите W чтобы начать", fontMenu2);
-
-            // this.gamePressToStart2 = this.game.add.text(this.game.camera.width,this.game.camera.height,"игру про космос", fontMenu2);
-            // this.gamePressToStart2.anchor.set(1,1);
-            // this.gamePressToStart.anchor.set(1,1);
 
 
             this.preloadBar.cropEnabled = false;
@@ -165,26 +168,14 @@
 
         update: function () {
 
+            this.game.galaxyFilter.update();
             if(!this.textupdated)
             {
                 this.newgameT.text+=" ";
                 this.newgameT.text=this.newgameT.text.trim();
                 this.textupdated = true;
             }
-            // if(this.counter >30)
-            // {
-            //     this.gamePressToStart.visible = !this.gamePressToStart.visible;
-            //     this.counter = 0;
-            // }
-            // else
-            //     this.counter++;
-            //
-            //
-            // if(this.game.input.keyboard.isDown(Phaser.KeyCode.W))
-            // {
-            //              this.state.start('MainState');
-            //
-            // }
+
 
         },
         render: function () {

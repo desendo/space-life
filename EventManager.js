@@ -7,6 +7,7 @@ function EventManager (game)
     this.game.onPlayerDamage = new  Phaser.Signal();
     this.game.onPlayerDead = new  Phaser.Signal();
     this.game.onPlayerInventoryChanged = new  Phaser.Signal();
+    this.game.onCargoFull = new  Phaser.Signal();
 
 }
 
