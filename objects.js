@@ -235,21 +235,19 @@ Planet.prototype.update = function () {
       if(go.objType!=='planet') {
           d = (go.b.x - this.b.x) * (go.b.x - this.b.x) + (go.b.y - this.b.y) * (go.b.y - this.b.y);
           if (go !== null && go.objType === 'asteroid' && d < this.gravDistSquared) {
-              go.dirToShip = new Phaser.Point(go.b.x - this.b.x, go.b.y - this.b.y);
-              go.dirToShip.normalize();
+              go.dirToObj = new Phaser.Point(go.b.x - this.b.x, go.b.y - this.b.y);
+              go.dirToObj.normalize();
               var q = (d + 2500 * this.b.width) / (this.size * this.size * 100000);
 
-              go.b.body.force.x = -go.dirToShip.x / ( q) * go.b.body.mass;
-              go.b.body.force.y = -go.dirToShip.y / (q) * go.b.body.mass;
+              go.b.body.force.x = -go.dirToObj.x / ( q) * go.b.body.mass;
+              go.b.body.force.y = -go.dirToObj.y / (q) * go.b.body.mass;
               go.isGrav = true;
 
 
           }
           if (go.b.exists === true && d < this.atmRadiusSquared/2) {
 
-              go.inAtmo = true;
-
-              go.Burn();
+              go.affectByAtmo();
 
 
           }
@@ -341,7 +339,7 @@ var Asteroid = {
         this.game.add.tween(this.glow.scale).to( {x: 1.05, y: 1.05}, 40, Phaser.Easing.Back.InOut, true, 0, false).yoyo(true);
 
 
-        this.Burn = function () {
+        this.affectByAtmo = function () {
 
             this.glow.visible = true;
             for(var i =0; i < this.glow.children.length; i++) {
