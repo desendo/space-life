@@ -1,6 +1,15 @@
 //game.enemies = new EnemyGroup(planets[0].x,(planets[0].y-planets[0].b.width*0.56-500),300,0,0.05,true,game);
 
+ObjTypes=
+    {
+        planet:{},
+        asteroid:{},
+        material:{},
+        equipment:{},
+        ship:{},
+        player:{}
 
+    };
 var Alt = Alt || {};
 Alt.Bullet = function (game, x, y, key, frame,origin,weapon) {
 
@@ -163,7 +172,7 @@ Planet.prototype.init = function (x,y,size,sprite,gravityDistance,name="Земл
 
     this.b.smoothed=false;
     this.b.anchor.set(0.5);
-    this.objType = 'planet';
+    this.objType = ObjTypes.planet;
     this.game.physics.p2.enable(this.b, false);
 
     this.b.body.setCircle(this.b.width/2*1);
@@ -199,7 +208,7 @@ Planet.prototype.deltaDir = function () {
 };
 Planet.prototype.meteorStrike = function () {
   var meteor = arguments[1].parentObject;
-    if(meteor.objType==='asteroid')
+    if(meteor.objType===ObjTypes.asteroid)
     {
         console.log("meteor.objType ",meteor.objType);
         meteor.explode();
@@ -232,9 +241,9 @@ Planet.prototype.update = function () {
   {
 
       go = this.game.spaceObjects[i];
-      if(go.objType!=='planet') {
+      if(go.objType!==ObjTypes.planet) {
           d = (go.b.x - this.b.x) * (go.b.x - this.b.x) + (go.b.y - this.b.y) * (go.b.y - this.b.y);
-          if (go !== null && go.objType === 'asteroid' && d < this.gravDistSquared) {
+          if (go !== null && go.objType === ObjTypes.asteroid && d < this.gravDistSquared) {
               go.dirToObj = new Phaser.Point(go.b.x - this.b.x, go.b.y - this.b.y);
               go.dirToObj.normalize();
               var q = (d + 2500 * this.b.width) / (this.size * this.size * 100000);
@@ -292,7 +301,7 @@ var Asteroid = {
         this.size = size;
         this.health = size*1000*randomInteger(90,110)/100;
 
-        this.objType = 'asteroid';
+        this.objType = ObjTypes.asteroid;
 
         this.b = this.game.add.sprite(this.x,this.y,sprite);
         this.b.anchor.set(0.5);

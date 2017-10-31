@@ -133,7 +133,7 @@ SpaceLifeGame.MainState.prototype = {
             game.ship = ship;
 
             game.ship.b.body.setMaterial(shipMaterial);
-            ship.b.body.collides(game.spaceBodiesColGroup, ship.colCallback, this);
+
 
 
             spaceObjects.push(game.ship);

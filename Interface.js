@@ -962,7 +962,7 @@ var Interface = {
             for(var i = 0,j=this.game.spaceObjects.length;i<j;i++)
             {
                 var object =this.game.spaceObjects[i];
-                if(object.b.exists) {
+                if(object.b.visible) {
 
                     var unitMiniX = (object.b.x - ship.b.x) * miniMap.resolution * miniMap.zoom + miniMap.UIframe.width / 2;
                     var unitMiniY = (object.b.y - ship.b.y) * miniMap.resolution * miniMap.zoom + miniMap.UIframe.height / 2;
@@ -971,26 +971,26 @@ var Interface = {
 
                     if (unitMiniX < miniMap.UIframe.width && unitMiniX > 0 && unitMiniY < miniMap.UIframe.height && unitMiniY > 0) {
                         //if(true ) {
-                        if (object.objType === 'planet') {
+                        if (object.objType === ObjTypes.planet) {
 
                             miniMap.unitDots.beginFill(mapColorPlanet, 0.5);
                             miniMap.unitDots.drawCircle(unitMiniX, unitMiniY + miniMap.localY, 8);
 
                         }
-                        else if (object.objType === 'asteroid') {
+                        else if (object.objType === ObjTypes.asteroid) {
                             if (object.health !== -1) {
                                 miniMap.unitDots.beginFill(mapColorAsteroidField, 0.5);
                                 miniMap.unitDots.drawRect(unitMiniX, unitMiniY + miniMap.localY, 2, 2);
                             }
 
                         }
-                        else if (object.objType === 'player') {
+                        else if (object.objType === ObjTypes.player) {
 
                             miniMap.unitDots.beginFill(mapColorPlayer, 1);
                             miniMap.unitDots.drawRect(unitMiniX - 1, unitMiniY + miniMap.localY - 1, 4, 4);
 
                         }
-                        else if (object.objType === 'ship') {
+                        else if (object.objType === ObjTypes.ship) {
 
                             miniMap.unitDots.beginFill(mapColorPlayer, 0.5);
                             miniMap.unitDots.drawRect(unitMiniX - 1, unitMiniY + miniMap.localY - 1, 4, 4);

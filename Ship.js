@@ -80,25 +80,25 @@ Ship.prototype.consumeFuel = function (value) {
 Ship.prototype.compensate = function(){
 
 
-    if (this.vel > 0) {
+    if (this.vel > 1) {
 
-        var k = 1;
-        var l = 2;
+        var dampQuotient = 1;
+        var dumpThreshold = 4;
 
-        if (this.vel < l)        {            k=this.vel/l*this.vel/l;        }
-        else        {k=1;}
+        if (this.vel < dumpThreshold)        {            dampQuotient=Math.sqrt(this.vel/dumpThreshold);        }
+
 
         if (Math.cos(this.turnAngle) > 0) {
-            this.backward(Math.cos(this.turnAngle) * k ,true);
+            this.backward(Math.cos(this.turnAngle) * dampQuotient ,true);
 
-                this.sideThrust(-Math.sin(this.turnAngle)* k ,true);
+                this.sideThrust(-Math.sin(this.turnAngle)* dampQuotient ,true);
 
 
         }
         else
         {
-            this.forward(-Math.cos(this.turnAngle)* k ,true);
-            this.sideThrust(-Math.sin(this.turnAngle)* k ,true);
+            this.forward(-Math.cos(this.turnAngle)* dampQuotient ,true);
+            this.sideThrust(-Math.sin(this.turnAngle)* dampQuotient ,true);
         }
 
     }
@@ -258,7 +258,7 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.b.animations.add('stop',[4],5,true);
     this.b.animations.add('rfly',[5,6,7,8],50,true);
 
-    this.objType= 'ship';
+    this.objType= ObjTypes.ship;
 
 
 
@@ -277,17 +277,59 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
 
     this.b.body.onBeginContact.add(this.contactHandler,this);
     this.b.body.onEndContact.add(function () {
-        if(arguments[0].parentObject && arguments[0].parentObject.objType==='planet') {
+        if(arguments[0].parentObject && arguments[0].parentObject.objType===ObjTypes.planet) {
             this.touched =false;
         }
 
     },this);
 
+    this.b.body.collides(this.game.spaceBodiesColGroup, this.colCallback, this);
+
+};
+Player.prototype.colCallback = function (shipBody,collidedBody) {
+
+
+
+
+
+    var mass = collidedBody.mass;
+    if(collidedBody.mass>100000)
+    {
+        mass = shipBody.mass*50;
+
+    }
+    var velSq = (collidedBody.velocity.x - shipBody.velocity.x)*(collidedBody.velocity.x - shipBody.velocity.x)/100+
+        (collidedBody.velocity.y - shipBody.velocity.y)*(collidedBody.velocity.y - shipBody.velocity.y)/100;
+
+    if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType===ObjTypes.planet) {
+
+        var velSq = shipBody.parentObject.oldVel*shipBody.parentObject.oldVel/100;
+    }
+    var collisionEnergy = velSq *mass;
+
+
+    if(shipBody.parentObject.isStarting!==true && velSq>1) {
+        console.log("Energy: "+collisionEnergy +", vel: "+velSq +", mass: "+mass);
+        shipBody.parentObject.DamageHandler(Math.floor(collisionEnergy) );
+
+    }
+    if(collidedBody.parentObject!==undefined && !shipBody.parentObject.isDead && collidedBody.parentObject.objType===ObjTypes.planet)
+    {
+        shipBody.parentObject.Land(collidedBody.parentObject);
+    }
+
+    // this.game.damageEmiter.x = this.contactPointX;
+    // this.game.damageEmiter.y = this.contactPointY;
+    // this.game.damageEmiter.start(true, 500,100,20);
+
+
+
+
 };
 Ship.prototype.contactHandler = function () {
 
 
-    if(arguments[0].parentObject && arguments[0].parentObject.objType==='planet') {
+    if(arguments[0].parentObject && arguments[0].parentObject.objType===ObjTypes.planet) {
         this.touched = true;
     }
 
@@ -303,9 +345,9 @@ Ship.prototype.contactHandler = function () {
         //arguments[0].parentObject.contactPointX = cx;
         //arguments[0].parentObject.contactPointY = cy;
 
-        // game.damageEmiter.x = cx;
-        // game.damageEmiter.y = cy;
-        // game.damageEmiter.start(true, 500,100,20);
+         game.damageEmiter.x = cx;
+         game.damageEmiter.y = cy;
+         game.damageEmiter.start(true, 500,100,20);
 
     }
 };
@@ -365,7 +407,7 @@ Ship.prototype.checkBulletsForHits = function(gameObjects)    {
                             b.getBounds())) {
 
 
-                        if (gameObject.objType === 'asteroid') {
+                        if (gameObject.objType === ObjTypes.asteroid) {
 
                             if(((gameObject.b.x - b.x)*(gameObject.b.x - b.x)+(gameObject.b.y - b.y)*(gameObject.b.y - b.y)) < gameObject.squaredRadius) {
 
@@ -382,7 +424,7 @@ Ship.prototype.checkBulletsForHits = function(gameObjects)    {
                                 }
                             }
                         }
-                        if (gameObject.objType === 'ship') {
+                        if (gameObject.objType === ObjTypes.ship) {
                                 if(gameObject.b.game!=null && gameObject.b.game.effectsEnabled) {
                                     gameObject.b.game.damageEmiter.x = b.x;
                                     gameObject.b.game.damageEmiter.y = b.y;
@@ -754,9 +796,9 @@ function Player(x,y,game,hull,colGroup) {
         }
     });
     this.initHull(hull);
-    this.objType= 'player';
+    this.objType= ObjTypes.player;
     this.money = 40;
-    this.fuel=50;
+    this.fuel=20;
     this.game.onPlayerInventoryChanged.add(this.calcVolumeMass,this);
 
 
@@ -904,7 +946,7 @@ Player.prototype.updateRelationsToPlanets = function () {
     this.planetsTotalGravity.y = 0;
     for (var i = this.game.planets.length; i > 0; i--) {
         var planet = this.game.planets[i-1];
-        if (planet.objType === 'planet') {
+        if (planet.objType === ObjTypes.planet) {
 
             var d = this.sqaredDistance(planet.x, planet.y);
 
@@ -1001,46 +1043,6 @@ Player.prototype.updateRelationsToPlanets = function () {
 
     this.b.body.force.x = this.planetsTotalGravity.x;
     this.b.body.force.y = this.planetsTotalGravity.y;
-
-};
-Player.prototype.colCallback = function (shipBody,collidedBody) {
-
-
-
-
-
-    var mass = collidedBody.mass;
-    if(collidedBody.mass>100000)
-    {
-        mass = shipBody.mass*50;
-
-    }
-    var velSq = (collidedBody.velocity.x - shipBody.velocity.x)*(collidedBody.velocity.x - shipBody.velocity.x)/100+
-        (collidedBody.velocity.y - shipBody.velocity.y)*(collidedBody.velocity.y - shipBody.velocity.y)/100;
-
-    if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='planet') {
-
-        var velSq = shipBody.parentObject.oldVel*shipBody.parentObject.oldVel/100;
-    }
-    var collisionEnergy = velSq *mass;
-
-
-    if(shipBody.parentObject.isStarting!==true && velSq>1) {
-        console.log("Energy: "+collisionEnergy +", vel: "+velSq +", mass: "+mass);
-        shipBody.parentObject.DamageHandler(Math.floor(collisionEnergy) );
-
-    }
-    if(collidedBody.parentObject!==undefined && !shipBody.parentObject.isDead && collidedBody.parentObject.objType==='planet')
-    {
-        shipBody.parentObject.Land(collidedBody.parentObject);
-    }
-
-    // this.game.damageEmiter.x = this.contactPointX;
-    // this.game.damageEmiter.y = this.contactPointY;
-    // this.game.damageEmiter.start(true, 500,100,20);
-
-
-
 
 };
 Player.prototype.calcVolumeMass = function () {
@@ -1457,7 +1459,7 @@ Player.prototype.controlByMouse = function (pointer) {
 Player.prototype.postUpdate = function () {
         for (var i = this.game.planets.length; i > 0; i--) {
             var planet = this.game.planets[i - 1];
-            if (planet.objType === 'planet') {
+            if (planet.objType === ObjTypes.planet) {
                 planet.oldDirToShip.x = planet.dirToShip.x;
                 planet.oldDirToShip.y = planet.dirToShip.y;
             }
