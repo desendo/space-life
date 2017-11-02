@@ -2,8 +2,7 @@ var Materials = Materials || {};
 Materials.Asteroids = {};
 Materials =
     {
-      asteroid1:
-          {
+      asteroid1: {
               name: "asteroid1",
               typeName: PickableObjectTypes.material,
               title: "камень",
@@ -157,7 +156,7 @@ Material.constructor = function (x,y,game,config,colGroup,colGroups,volume) {
     this.volume = volume || 10;
     this.mass = this.material.density/10 * this.volume;
     Item.constructor.apply(this,arguments);
-
+    this.objType = ObjTypes.material;
     return this;
 };
 var EquipmentObject = Object.create(Item);
@@ -167,5 +166,6 @@ EquipmentObject.constructor = function (x, y, game, config, colGroup, colGroups)
     this.mass = config.mass;
     this.volume = config.volume || 10;
     Item.constructor.apply(this,arguments);
+    this.objType = ObjTypes.equipment;
     return this;
 };

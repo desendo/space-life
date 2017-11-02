@@ -92,6 +92,8 @@ var Interface = {
             mouseTooltip.tip.visible = false;
 
         };
+        mouseTooltip.tip.visible = false;
+        mouseTooltip.back.visible = false;
         return mouseTooltip
     },
 
@@ -593,7 +595,6 @@ var Interface = {
 
         labels.labelSay.fixedToCamera = true;
 
-
         var  configArmorBar = {
             width: 130,
             height: 14,
@@ -635,6 +636,7 @@ var Interface = {
     updateLabels: function (game) {
         this.game=game;
         var ship = this.game.ship;
+
         if(this.resetFontBug)
         {this.c++;
             if(this.c>5) {
@@ -646,7 +648,9 @@ var Interface = {
         }
 
         var labels = this.labels;
+
         if (ship.fuel < 0) ship.fuel = 0;
+
         labels.labelFuel.text = "Топливо: "+ Math.round(ship.fuel*100)/100;
         labels.labelAcc.text = "Ускорение: "+ ship.acc.toFixed(2)+"g";
         labels.labelMass.text = "Масса: "+ ship.mass+"t";
@@ -749,6 +753,7 @@ var Interface = {
         var pilot={};
         pilot.parent = parent;
         pilot.game = parent.game;
+        pilot.hp = 100;
         var x = pilot.game.camera.view.width;
         var y = pilot.game.camera.view.height;
         var w = 130;
@@ -812,9 +817,9 @@ var Interface = {
             flipped: false
         };
 
-        pilot.hpbar = new HealthBar(pilot.game, config);
-        pilot.hpbar.setFixedToCamera(true);
-        pilot.hpbar.setPercent(100);
+        //pilot.hpbar = new HealthBar(pilot.game, config);
+        //pilot.hpbar.setFixedToCamera(true);
+        //pilot.hpbar.setPercent(100);
 
         pilot.say = function (text) {
             pilot.parent.labels.labelSay.text = text;
@@ -823,17 +828,17 @@ var Interface = {
             },this,this);
         };
         pilot.updateDamagePicture = function () {
-            if(pilot.hpbar.percents==100)
+            if(pilot.hp==100)
                 pilot.d.animations.play('d0',6,true,false);
-            if(pilot.hpbar.percents<100)
+            if(pilot.hp<100)
                 pilot.d.animations.play('d1',6,true,false);
-            if(pilot.hpbar.percents<80)
+            if(pilot.hp<80)
                 pilot.d.animations.play('d2',6,true,false);
-            if(pilot.hpbar.percents<50)
+            if(pilot.hp<50)
                 pilot.d.animations.play('d3',6,true,false);
-            if(pilot.hpbar.percents<25)
+            if(pilot.hp<25)
                 pilot.d.animations.play('d4',6,true,false);
-            if(pilot.hpbar.percents<=10)
+            if(pilot.hp<=10)
                 pilot.d.animations.play('d5',6,true,false);
 
         };
@@ -961,7 +966,7 @@ var Interface = {
             for(var i = 0,j=this.game.spaceObjects.length;i<j;i++)
             {
                 var object =this.game.spaceObjects[i];
-                if(object.b.exists) {
+                if(object.b.visible) {
 
                     var unitMiniX = (object.b.x - ship.b.x) * miniMap.resolution * miniMap.zoom + miniMap.UIframe.width / 2;
                     var unitMiniY = (object.b.y - ship.b.y) * miniMap.resolution * miniMap.zoom + miniMap.UIframe.height / 2;
@@ -970,26 +975,26 @@ var Interface = {
 
                     if (unitMiniX < miniMap.UIframe.width && unitMiniX > 0 && unitMiniY < miniMap.UIframe.height && unitMiniY > 0) {
                         //if(true ) {
-                        if (object.objType === 'planet') {
+                        if (object.objType === ObjTypes.planet) {
 
                             miniMap.unitDots.beginFill(mapColorPlanet, 0.5);
                             miniMap.unitDots.drawCircle(unitMiniX, unitMiniY + miniMap.localY, 8);
 
                         }
-                        else if (object.objType === 'asteroid') {
+                        else if (object.objType === ObjTypes.asteroid) {
                             if (object.health !== -1) {
                                 miniMap.unitDots.beginFill(mapColorAsteroidField, 0.5);
                                 miniMap.unitDots.drawRect(unitMiniX, unitMiniY + miniMap.localY, 2, 2);
                             }
 
                         }
-                        else if (object.objType === 'player') {
+                        else if (object.objType === ObjTypes.player) {
 
                             miniMap.unitDots.beginFill(mapColorPlayer, 1);
                             miniMap.unitDots.drawRect(unitMiniX - 1, unitMiniY + miniMap.localY - 1, 4, 4);
 
                         }
-                        else if (object.objType === 'ship') {
+                        else if (object.objType === ObjTypes.ship) {
 
                             miniMap.unitDots.beginFill(mapColorPlayer, 0.5);
                             miniMap.unitDots.drawRect(unitMiniX - 1, unitMiniY + miniMap.localY - 1, 4, 4);

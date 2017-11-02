@@ -98,3 +98,57 @@ var EquipmentObject =
         }
     };
 
+
+
+
+
+
+function generateAsteroids (asteroidsInField,
+                            fieldsAmountMin,
+                            fieldsAmountMax,
+                            asteroidSpriteSheet,game,
+                            asteroidsColGroup,colGroupsToCollide) {
+
+    var fields = [];
+    var worldSize = game.world.width;
+
+    var generateField = function (game) {
+        var field = {};
+        field.x=0;
+        field.y=0;
+
+        field.x = randomInteger(worldSize*0.5-8000,worldSize*0.5+8000);
+        field.y = randomInteger(worldSize*0.5-8000,worldSize*0.5+8000);
+        field.asteroids = [];
+        field.radius = 150;
+        var asteroidsAmount = randomInteger(asteroidsInField*0.7,asteroidsInField*1.3);
+        for (var i = asteroidsAmount; i >0; i--)
+        {
+            var angleFromFieldCenter = 2*Math.PI*Math.random();
+            var u = Math.random() +Math.random();
+            var distFromFieldCenter = u>1 ? 2-u :u;
+            distFromFieldCenter *= field.radius;
+            var scale = randomInteger(2,5)/10;
+            var asteroid = Object.create(Asteroid);
+            asteroid.constructor(field.x+distFromFieldCenter*Math.cos(angleFromFieldCenter),field.y+distFromFieldCenter*Math.sin(angleFromFieldCenter),scale,asteroidSpriteSheet,game);
+
+            field.asteroids.push(asteroid);
+
+            game.spaceObjects.push(asteroid);
+
+            asteroid.b.body.setCollisionGroup(asteroidsColGroup);
+            asteroid.b.body.collides(colGroupsToCollide);
+
+
+        }
+        return field;
+
+    };
+    var fieldsAmount = randomInteger(fieldsAmountMin, fieldsAmountMax);
+
+    for (var i = fieldsAmount; i>0;i-- )
+    {
+        fields.push(generateField(game));
+    }
+    return fields;
+};

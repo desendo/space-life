@@ -52,14 +52,14 @@
             this.newgame.anchor.set(0.5);
 
 
-            this.newgameT = game.add.text(0,0,T[lang].newgame,menu);
-            this.newgameT.anchor.set(0.5);
-            this.newgameT.fixedToCamera = true;
-            this.newgame.addChild(this.newgameT);
+            this.newgameLabel = game.add.text(0,0,T[lang].newgame,menu);
+            this.newgameLabel.anchor.set(0.5);
+            this.newgameLabel.fixedToCamera = true;
+            this.newgame.addChild(this.newgameLabel);
             this.newgame.fixedToCamera = true;
 
-            if(JSON.parse(localStorage.getItem("savegame"))!==null) {
-                this.continuegame = game.add.button(cx, cy + hs + 10, 'menubuttons', this.startNewGame, this, 1, 0, 1, 0);
+            if(JSON.parse(localStorage.getItem("savegame"))!==null || true) {
+                this.continuegame = game.add.button(cx, cy + hs + 10, 'menubuttons', this.continueGame, this, 1, 0, 1, 0);
                 this.continuegame.events.onInputOut.add(function () {
                     arguments[0].children[0].fill = "#ffffff";
                 }, this);
@@ -69,10 +69,10 @@
                 this.continuegame.anchor.set(0.5);
 
 
-                this.continuegameT = game.add.text(0, 0, T[lang].continuegame, menu);
-                this.continuegameT.anchor.set(0.5);
-                this.continuegameT.fixedToCamera = true;
-                this.continuegame.addChild(this.continuegameT);
+                this.continuegameLabel = game.add.text(0, 0, T[lang].continuegame, menu);
+                this.continuegameLabel.anchor.set(0.5);
+                this.continuegameLabel.fixedToCamera = true;
+                this.continuegame.addChild(this.continuegameLabel);
                 this.continuegame.fixedToCamera = true;
             }
 
@@ -81,7 +81,6 @@
         },
 
         preload: function () {
-            this.game.load.shader('galaxy', 'assets/galaxy.frag');
 
             this.game.time.advancedTiming = true;
 
@@ -93,26 +92,28 @@
 
             this.load.spritesheet('ship1',assets+'sprite_ship1.png',32,32,9,0,0);
             this.load.spritesheet('ship0',assets+'ship0.png',32,32,4,0,0);
+            this.load.spritesheet('sidethrust1',assets+'side_thrust1.png',5,5,5,0,0);
 
             this.load.spritesheet('grahem',assets+'grahem4.png',32,32,4,0,0);
             this.load.spritesheet('grahemdamages',assets+'grahemdamages.png',32,32,6,0,0);
             this.load.spritesheet('shipButton',assets+'shipButtons.png',48,16,16,0,0);
             this.load.spritesheet('pilotback',assets+'pilotback.png',32,32,6,0,0);
-            this.load.spritesheet('sidethrust1',assets+'side_thrust1.png',5,5,5,0,0);
 
 
             this.load.spritesheet('asteroids1',assets+'asteroids1.png',32,32,8,0,0);
             this.load.spritesheet('glow',assets+'glow.png',32,32,4,0,0);
             this.load.spritesheet('buttons',assets+'buttons.png',75,25,9);
-            this.load.image('button',assets+'button.png');
-            this.load.spritesheet('button1',assets+'button1.png',96,32,3);
             this.load.spritesheet('spaceicons',assets+'spaceicons.png',16,16,5);
+
 
             this.load.image('planet',assets+'sprite_planet.png');
             this.load.image('laser',assets+'laser.png');
             this.load.image('rock',assets+'rock.png');
             this.load.image('part',assets+'part.png');
+            this.load.image('starsBackground',assets+'sprite_stars.png');
+            this.load.image('button',assets+'button.png');
 
+            //equipments
             this.load.spritesheet('lasers',assets+'lasers.png',16,16,3,0,0);
             this.load.spritesheet('engines',assets+'engines.png',16,16,3,0,0);
             this.load.spritesheet('generators',assets+'PowerGenerator.png',16,16,1,0,0);
@@ -120,15 +121,9 @@
             this.load.spritesheet('grabbers',assets+'Grabber.png',16,16,1,0,0);
             this.load.spritesheet('radars',assets+'Radar.png',16,16,1,0,0);
 
-            this.load.image('starsBackground',assets+'sprite_stars.png');
-            this.load.image('button',assets+'button.png');
-
             this.load.physics('shipShapesData', assets+'shipHullsShapes.json');
-
-
-
-
-
+            this.load.shader('noise', 'assets/shader1.frag');
+            this.load.shader('galaxy', 'assets/galaxy.frag');
 
         },
 
@@ -171,8 +166,8 @@
             this.game.galaxyFilter.update();
             if(!this.textupdated)
             {
-                this.newgameT.text+=" ";
-                this.newgameT.text=this.newgameT.text.trim();
+                this.newgameLabel.text+=" ";
+                this.newgameLabel.text=this.newgameLabel.text.trim();
                 this.textupdated = true;
             }
 

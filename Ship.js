@@ -66,7 +66,9 @@ function Ship (x,y,game,hull,colGroup,colGroups) {
 
 
     DamagableObj.apply(this,[hull.mass]);
-    this.init(x,y,game,hull,colGroup,colGroups);};
+    this.init(x,y,game,hull,colGroup,colGroups);
+
+};
 Ship.prototype = Object.create(DamagableObj.prototype);
 Ship.prototype.consumeFuel = function (value) {
 
@@ -78,22 +80,25 @@ Ship.prototype.consumeFuel = function (value) {
 Ship.prototype.compensate = function(){
 
 
-    if (this.vel > 2) {
+    if (this.vel > 1) {
 
-        var k = 1;
-        //if (this.vel < 5)        {            k=this.vel/10;        }
+        var dampQuotient = 1;
+        var dumpThreshold = 4;
+
+        if (this.vel < dumpThreshold)        {            dampQuotient=Math.sqrt(this.vel/dumpThreshold);        }
+
 
         if (Math.cos(this.turnAngle) > 0) {
-            this.backward(Math.cos(this.turnAngle) * k ,true);
+            this.backward(Math.cos(this.turnAngle) * dampQuotient ,true);
 
-                this.sideThrust(-Math.sin(this.turnAngle)* k ,true);
+                this.sideThrust(-Math.sin(this.turnAngle)* dampQuotient ,true);
 
 
         }
         else
         {
-            this.forward(-Math.cos(this.turnAngle)* k ,true);
-            this.sideThrust(-Math.sin(this.turnAngle)* k ,true);
+            this.forward(-Math.cos(this.turnAngle)* dampQuotient ,true);
+            this.sideThrust(-Math.sin(this.turnAngle)* dampQuotient ,true);
         }
 
     }
@@ -102,7 +107,7 @@ Ship.prototype.compensate = function(){
     }
 
 };
-Ship.prototype.Burn = function(){
+Ship.prototype.affectByAtmo = function(){
 
     if(this.vel > 20) {
 
@@ -156,8 +161,8 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.b.body.setCircle(this.b.width/3,0,0);
 
     this.b.body.setCollisionGroup(colGroup);
-    if(colGroups!==undefined)
-        this.b.body.collides(colGroups);
+    // if(colGroups!==undefined)
+    //     this.b.body.collides(colGroups);
 
     this.b.parentObject = this;
     this.b.body.parentObject = this;
@@ -253,7 +258,7 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.b.animations.add('stop',[4],5,true);
     this.b.animations.add('rfly',[5,6,7,8],50,true);
 
-    this.objType= 'ship';
+    this.objType= ObjTypes.ship;
 
 
 
@@ -264,26 +269,46 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
 
     this.planetsTotalGravity = new Phaser.Point(0,0);
     this.knownObjects = [];
+
     //this.SetStartEq();
     this.initSecondaryEngines();
     this.addMiniHud(1);
 
 
-    this.b.body.onBeginContact.add(this.contactHandler);
+   this.b.body.onBeginContact.add(this.contactHandler,this);
+    this.b.body.onEndContact.add(function () {
+        if(arguments[0].parentObject && arguments[0].parentObject.objType===ObjTypes.planet) {
+            this.touched =false;
+        }
+    },this);
+
+
 
 };
+
 Ship.prototype.contactHandler = function () {
 
+
+    if(arguments[0].parentObject && arguments[0].parentObject.objType===ObjTypes.planet) {
+        this.touched = true;
+    }
+
     if(arguments[0].parentObject) {
+
+
         var pos = arguments[4][0].bodyA.position;
         var pt = arguments[4][0].contactPointA;
         var game = arguments[0].parentObject.game;
         var cx = game.physics.p2.mpxi(pos[0] + pt[0]);
         var cy = game.physics.p2.mpxi(pos[1] + pt[1]);
-        game.damageEmiter.x = cx;
-        game.damageEmiter.y = cy;
-        game.damageEmiter.start(true, 500,100,20);
-        console.log("collision at:" + cx + ", " + cy);
+
+        //arguments[0].parentObject.contactPointX = cx;
+        //arguments[0].parentObject.contactPointY = cy;
+
+         game.damageEmiter.x = cx;
+         game.damageEmiter.y = cy;
+         game.damageEmiter.start(true, 500,100,20);
+
     }
 };
 Ship.prototype.Destruct = function(){
@@ -300,6 +325,7 @@ Ship.prototype.Destruct = function(){
     this.b.body.velocity.x =0;
     this.b.body.velocity.y =0;
     this.b.exists = false;
+    this.b.visible = false;
 
 
 
@@ -341,7 +367,7 @@ Ship.prototype.checkBulletsForHits = function(gameObjects)    {
                             b.getBounds())) {
 
 
-                        if (gameObject.objType === 'asteroid') {
+                        if (gameObject.objType === ObjTypes.asteroid) {
 
                             if(((gameObject.b.x - b.x)*(gameObject.b.x - b.x)+(gameObject.b.y - b.y)*(gameObject.b.y - b.y)) < gameObject.squaredRadius) {
 
@@ -358,7 +384,7 @@ Ship.prototype.checkBulletsForHits = function(gameObjects)    {
                                 }
                             }
                         }
-                        if (gameObject.objType === 'ship') {
+                        if (gameObject.objType === ObjTypes.ship) {
                                 if(gameObject.b.game!=null && gameObject.b.game.effectsEnabled) {
                                     gameObject.b.game.damageEmiter.x = b.x;
                                     gameObject.b.game.damageEmiter.y = b.y;
@@ -528,12 +554,13 @@ Ship.prototype.rotateLeft = function () {
 };
 Ship.prototype.forward = function (q = 1,damping = false) {
 
-    if(!this.b.exists && !this.isDead)
+    if(this.isLanded && !this.isDead)
     {
-        this.b.exists =true;
+
+        this.unLand();
     }
 
-    if(this.fuel>0) {
+    if(this.fuel>0 ) {
         this.isLanded=false;
         if (damping)
         {
@@ -729,10 +756,12 @@ function Player(x,y,game,hull,colGroup) {
         }
     });
     this.initHull(hull);
-    this.objType= 'player';
+    this.objType= ObjTypes.player;
     this.money = 40;
-    this.fuel=50;
+    this.fuel=20;
     this.game.onPlayerInventoryChanged.add(this.calcVolumeMass,this);
+
+    this.b.body.collides(this.game.spaceBodiesColGroup, this.colCallback, this);
 
 
 };
@@ -761,42 +790,44 @@ Player.prototype.SetStartEq = function () {
 };
 Player.prototype.readKeys = function () {
     var game = this.game;
-    if (game.usrKeys.rotLeftKey.isDown ) {
-        this.accRotateLeft();
-    }
-    else if (game.usrKeys.rotRightKey.isDown ) {
-        this.accRotateRight();
+    if(!this.isDead) {
+        if (game.usrKeys.rotLeftKey.isDown) {
+            this.accRotateLeft();
+        }
+        else if (game.usrKeys.rotRightKey.isDown) {
+            this.accRotateRight();
 
-    }
-    else {
+        }
+        else {
 
-        this.rotationThrustCurrent = 0;
-        this.b.body.setZeroRotation();
-        this.engineLeft.animations.play('stop', 20, true);
-        this.engineRight.animations.play('stop', 20, true);
-    }
+            this.rotationThrustCurrent = 0;
+            this.b.body.setZeroRotation();
+            this.engineLeft.animations.play('stop', 20, true);
+            this.engineRight.animations.play('stop', 20, true);
+        }
 
-    this.propulsing = false;
+        this.propulsing = false;
 
-    if (game.usrKeys.forwardKey.isDown && this.fuel > 0 && this.thrustCurrent>0) {
-        this.forward();
-        this.propulsing = true;
+        if (game.usrKeys.forwardKey.isDown && this.fuel > 0 && this.thrustCurrent > 0) {
+            this.forward();
+            this.propulsing = true;
 
-    }
-    else if (game.usrKeys.backwardKey.isDown  && this.fuel > 0 && this.thrustCurrent>0) {
-        this.backward();
-        this.propulsing = true;
-    }
-    if (this.game.usrKeys.sideLeftKey.isDown && this.fuel > 0 && this.thrustCurrent>0 ) {
+        }
+        else if (game.usrKeys.backwardKey.isDown && this.fuel > 0 && this.thrustCurrent > 0) {
+            this.backward();
+            this.propulsing = true;
+        }
+        if (this.game.usrKeys.sideLeftKey.isDown && this.fuel > 0 && this.thrustCurrent > 0) {
 
-        this.sideThrust(1);
-        this.propulsing = true;
-    }
-    if (this.game.usrKeys.sideRightKey.isDown && this.fuel > 0 && this.thrustCurrent>0) {
+            this.sideThrust(1);
+            this.propulsing = true;
+        }
+        if (this.game.usrKeys.sideRightKey.isDown && this.fuel > 0 && this.thrustCurrent > 0) {
 
-        this.sideThrust(-1);
-        this.propulsing = true;
+            this.sideThrust(-1);
+            this.propulsing = true;
 
+        }
     }
 
 };
@@ -806,13 +837,81 @@ Player.prototype.DamageHandler = function (dmg) {
 
     this.getDamage(dmg);
     this.game.onPlayerDamage.dispatch({hull:this.hp});
-    console.log("hp/hpmax",this.hp,this.hpmax);
 
 
 };
-Player.prototype.Land = function () {
-    console.log("land");
+Player.prototype.colCallback = function (shipBody,collidedBody) {
+
+
+
+    var mass = collidedBody.mass;
+    if(collidedBody.mass>100000)
+    {
+        mass = shipBody.mass*50;
+
+    }
+    var velSq = (collidedBody.velocity.x - shipBody.velocity.x)*(collidedBody.velocity.x - shipBody.velocity.x)/100+
+        (collidedBody.velocity.y - shipBody.velocity.y)*(collidedBody.velocity.y - shipBody.velocity.y)/100;
+
+    if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType===ObjTypes.planet) {
+
+        var velSq = shipBody.parentObject.oldVel*shipBody.parentObject.oldVel/100;
+    }
+    var collisionEnergy = velSq *mass;
+
+
+    if(shipBody.parentObject.isStarting!==true && velSq>1) {
+        console.log("Energy: "+collisionEnergy +", vel: "+velSq +", mass: "+mass);
+        shipBody.parentObject.DamageHandler(Math.floor(collisionEnergy) );
+
+    }
+    if(collidedBody.parentObject!==undefined && !shipBody.parentObject.isDead && collidedBody.parentObject.objType===ObjTypes.planet)
+    {
+
+        shipBody.parentObject.Land(collidedBody.parentObject);
+        console.log(collidedBody.parentObject);
+    }
+
+    // this.game.damageEmiter.x = this.contactPointX;
+    // this.game.damageEmiter.y = this.contactPointY;
+    // this.game.damageEmiter.start(true, 500,100,20);
+
+
+
+
+};
+Player.prototype.Land = function (planet = null) {
+
+    console.log("Land",planet);
     this.isLanded = true;
+
+    this.b.exists   = false;
+    this.b.exists   = true;
+    // this.b.alive    = true;
+    // this.b.visible  = true;
+
+    this.planetLanded = planet;
+    this.isStarting = false;
+    this.vel = 0;
+    this.oldVel = 0;
+
+};
+Player.prototype.unLand = function () {
+
+
+    this.isStarting = true;
+
+
+    this.game.time.events.add(1000, function () {
+        this.isStarting = false;
+
+    },this,this);
+
+    this.b.exists = true;
+    this.isLanded = false;
+
+    this.planetLanded = null;
+
 };
 Player.prototype.update = function () {
     Ship.prototype.update.apply(this);
@@ -834,7 +933,7 @@ Player.prototype.update = function () {
     this.game.userInterface.shipInterface.shipSell.enable(this.isLanded && this.cargoItemsGroup.children.length > 0);
     this.readKeys();
     this.readKeyboardInput();
-    if (!this.isFreeFlight && !this.propulsing && this.fuel > 0 && this.thrustCurrentDamp>0 ){
+    if (!this.isFreeFlight && !this.propulsing && this.fuel > 0 && this.thrustCurrentDamp>0 && !this.isLanded && !this.touched){
 
         this.compensate();
     }
@@ -848,7 +947,7 @@ Player.prototype.updateRelationsToPlanets = function () {
     this.planetsTotalGravity.y = 0;
     for (var i = this.game.planets.length; i > 0; i--) {
         var planet = this.game.planets[i-1];
-        if (planet.objType === 'planet') {
+        if (planet.objType === ObjTypes.planet) {
 
             var d = this.sqaredDistance(planet.x, planet.y);
 
@@ -877,9 +976,10 @@ Player.prototype.updateRelationsToPlanets = function () {
 
                     if (this.standingStillCounter ===undefined) this.standingStillCounter=0;
 
-                    this.standingStill = !this.isThrottling && (Math.abs(this.oldVel-this.vel) <0.05)&&Math.abs(this.acc)<0.1;
+                    this.standingStill = this.touched && (Math.abs(this.oldVel-this.vel) <0.05)&&Math.abs(this.acc)<0.1;
                     if(this.standingStill)
                     {
+
                         this.standingStillCounter++;
                     }
                     else if(this.standingStillCounter!=0)
@@ -890,7 +990,9 @@ Player.prototype.updateRelationsToPlanets = function () {
 
 
 
-                    if(this.isLanded && this.planetLanded!==null) {
+                    if(this.isLanded && this.planetLanded!==undefined) {
+
+
 
                         this.globalStatus = "На поверхности планеты " + this.planetLanded.name;
 
@@ -898,7 +1000,7 @@ Player.prototype.updateRelationsToPlanets = function () {
                         this.b.visible= true;
                         this.b.alive= true;
 
-
+                        this.b.animations.play('stop');
                         //this.planetLanded.orbit.bringToTop();
                         this.game.userInterface.labels.labelSpeed.style.backgroundColor = "transparent";
                         this.game.userInterface.labels.labelSpeed.style.fill = "#DDD";
@@ -943,29 +1045,6 @@ Player.prototype.updateRelationsToPlanets = function () {
 
     this.b.body.force.x = this.planetsTotalGravity.x;
     this.b.body.force.y = this.planetsTotalGravity.y;
-
-};
-Player.prototype.colCallback = function (shipBody,collidedBody) {
-
-    if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType==='planet') {
-
-        shipBody.parentObject.Land();
-    }
-
-    var mass = collidedBody.mass;
-    if(collidedBody.mass>100000)
-    {
-        mass = shipBody.mass*50;
-
-    }
-    var collisionEnergy = Math.sqrt((collidedBody.velocity.x - shipBody.velocity.x)*(collidedBody.velocity.x - shipBody.velocity.x)/100+
-            (collidedBody.velocity.y - shipBody.velocity.y)*(collidedBody.velocity.y - shipBody.velocity.y)/100
-        )*mass;
-
-    shipBody.parentObject.DamageHandler(Math.floor(collisionEnergy));
-
-
-
 
 };
 Player.prototype.calcVolumeMass = function () {
@@ -1382,7 +1461,7 @@ Player.prototype.controlByMouse = function (pointer) {
 Player.prototype.postUpdate = function () {
         for (var i = this.game.planets.length; i > 0; i--) {
             var planet = this.game.planets[i - 1];
-            if (planet.objType === 'planet') {
+            if (planet.objType === ObjTypes.planet) {
                 planet.oldDirToShip.x = planet.dirToShip.x;
                 planet.oldDirToShip.y = planet.dirToShip.y;
             }
