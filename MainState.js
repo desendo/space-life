@@ -14,6 +14,7 @@
 
 
 
+
     var planet;
     var planet2;
 
@@ -47,6 +48,7 @@ SpaceLifeGame.MainState.prototype = {
         this.game.canvas.oncontextmenu = function (e) { e.preventDefault(); }
         this.game.counter = 0;
         this.game.day = day;
+        this.game.worldSize=worldSize;
         this.game.wheelDelta = {};
         this.game.wheelDelta.val =0;
         this.game.wheelDelta.valueToChange = null;
@@ -102,16 +104,27 @@ SpaceLifeGame.MainState.prototype = {
 
         var shipMaterial = game.physics.p2.createMaterial('shipMaterial');
         var planetMaterial = game.physics.p2.createMaterial('planetMaterial');
-
+        game.planetMaterial = planetMaterial;
+        game.shipMaterial = shipMaterial;
         game.input.mouse.mouseWheelCallback = mouseWheel;
         SetGameControls();
         createGameCollisionGroups();
         game.userInterface = Object.create(Interface).constructor([150, 100, 150], game);
+
         if(this.game.continue)
         {
-            console.log(this.game.continue);
+            console.log("continue", this.game.continue);
+            Load(this.game, localStorage.getItem("savegame"));
+
         }
         else {
+            var initialSave = generateWorld();
+            Load(this.game, JSON.stringify(initialSave));
+            localStorage.setItem("savegame",JSON.stringify(initialSave));
+
+        }
+        if (false && !this.game.continue)
+        {
             planet = new Planet(worldSize / 2, worldSize / 2, 18, 'planet', 1500, 'Земля 2', game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup], game);
             planet2 = new Planet(worldSize / 2 + 50000, worldSize / 2 + 4000, 12, 'planet', 900, 'Земля 3', game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup], game);
             this.game.spaceObjectsLayer.add(planet.b);
@@ -150,37 +163,32 @@ SpaceLifeGame.MainState.prototype = {
 
             //collisions events
 
-
-
-
             ship.InitShipMenu();
             this.game.interfaceGroup.z=-100;
 
+            this.game.damageEmiter = this.game.add.emitter(ship.b.x,ship.b.y,30);
+            this.game.damageEmiter.makeParticles('part');
+            this.game.damageEmiter.gravity = 0;
+            this.game.damageEmiter.setAlpha(1, 0, 500, Phaser.Easing.Linear.None, false);
+            this.game.damageEmiter.forEach(function(p) {p.tint ='0xe94f00';},this);
 
 
+
+            this.game.explosionEmiter = this.game.add.emitter(ship.b.x,ship.b.y,600);
+            this.game.explosionEmiter.makeParticles('part');
+            this.game.explosionEmiter.gravity = 0;
+            // this.game.explosionEmiter.minParticleSpeed=0.2;
+            // this.game.explosionEmiter.maxParticleSpeed=0.5;
+            this.game.explosionEmiter.setAlpha(1, 0.5, 1500, Phaser.Easing.Linear.None,false);
+            this.game.explosionEmiter.forEach(function(p) {p.tint ='0xffc200';},this);
+
+            this.game.landEmiter = this.game.add.emitter(ship.b.x,ship.b.y,30);
+            this.game.landEmiter.makeParticles('part');
+            this.game.landEmiter.gravity = 0;
+            this.game.landEmiter.setAlpha(1, 0.5, 1500, Phaser.Easing.Linear.None,false);
+            this.game.landEmiter.forEach(function(p) {p.tint ='0xffc200';},this);
         }
 
-        this.game.damageEmiter = this.game.add.emitter(ship.b.x,ship.b.y,30);
-        this.game.damageEmiter.makeParticles('part');
-        this.game.damageEmiter.gravity = 0;
-        this.game.damageEmiter.setAlpha(1, 0, 500, Phaser.Easing.Linear.None, false);
-        this.game.damageEmiter.forEach(function(p) {p.tint ='0xe94f00';},this);
-
-
-
-        this.game.explosionEmiter = this.game.add.emitter(ship.b.x,ship.b.y,600);
-        this.game.explosionEmiter.makeParticles('part');
-        this.game.explosionEmiter.gravity = 0;
-        // this.game.explosionEmiter.minParticleSpeed=0.2;
-        // this.game.explosionEmiter.maxParticleSpeed=0.5;
-        this.game.explosionEmiter.setAlpha(1, 0.5, 1500, Phaser.Easing.Linear.None,false);
-        this.game.explosionEmiter.forEach(function(p) {p.tint ='0xffc200';},this);
-
-        this.game.landEmiter = this.game.add.emitter(ship.b.x,ship.b.y,30);
-        this.game.landEmiter.makeParticles('part');
-        this.game.landEmiter.gravity = 0;
-        this.game.landEmiter.setAlpha(1, 0.5, 1500, Phaser.Easing.Linear.None,false);
-        this.game.landEmiter.forEach(function(p) {p.tint ='0xffc200';},this);
 
         this.game.onPlayerDead.add(this.gameOver,this);
         this.game.onPlayerDead.add(this.game.userInterface.pilot.disConnect,this);
@@ -220,12 +228,12 @@ SpaceLifeGame.MainState.prototype = {
        // ship.readKeyboardInput();
         //ship.updateRelationsToPlanets();
 
+        if(ship!==undefined) {
+            ship.postUpdate();
 
-        ship.postUpdate();
 
-
-        game.userInterface.updateLabels(game);
-
+            game.userInterface.updateLabels(game);
+        }
 
 
 
@@ -300,8 +308,10 @@ function createStarsBackground(starsBackground) {
     starsBackground.scale.set(3);
     starsBackground.smoothed=false;
     starsBackground.update = function () {
-        this.tilePosition.x -= ship.b.body.velocity.x/200;
-        this.tilePosition.y -= ship.b.body.velocity.y/200;
+        if (ship!==undefined) {
+            this.tilePosition.x -= ship.b.body.velocity.x / 200;
+            this.tilePosition.y -= ship.b.body.velocity.y / 200;
+        }
     };
     game.spaceObjectsLayer.add(starsBackground);
 
@@ -366,6 +376,76 @@ function createGameCollisionGroups() {
     }
 
 
+function generateWorld()
+{
+
+    var save = {
+
+    player:{},
+    planets:[
+        {
+            x: -1000,
+            y:-1000,
+            size: 18,
+            gravityRadius:1500,
+            sprite: "planet"
+        },
+        {
+            x: 7000,
+            y: 4000,
+            size: 12,
+            gravityRadius:1500,
+            sprite: "planet"
+        }
+    ],
+    asteroids:[]
+
+
+
+};
+    save.asteroids = generateAst(5, 5);
+    return save;
+}
+
+function generateAst(asteroidsInField, fieldsAmount) {
+    var fields = [];
+    var worldSize = game.world.width;
+
+    var generateField = function (game) {
+        var field = {};
+        field.x=0;
+        field.y=0;
+
+        field.x = randomInteger(worldSize*0.5-8000,worldSize*0.5+8000);
+        field.y = randomInteger(worldSize*0.5-8000,worldSize*0.5+8000);
+        field.asteroids = [];
+        field.radius = 150;
+        var asteroidsAmount = randomInteger(asteroidsInField*0.7,asteroidsInField*1.3);
+        for (var i = asteroidsAmount; i >0; i--)
+        {
+            var angleFromFieldCenter = 2*Math.PI*Math.random();
+            var u = Math.random() +Math.random();
+            var distFromFieldCenter = u>1 ? 2-u :u;
+            distFromFieldCenter *= field.radius;
+            var scale = randomInteger(2,5)/10;
+            var asteroid = Object.create(Asteroid);
+            asteroid.constructor(field.x+distFromFieldCenter*Math.cos(angleFromFieldCenter),field.y+distFromFieldCenter*Math.sin(angleFromFieldCenter),scale,asteroidSpriteSheet,game);
+
+
+
+        }
+        return field;
+
+    };
+    var fieldsAmount = randomInteger(fieldsAmountMin, fieldsAmountMax);
+
+    for (var i = fieldsAmount; i>0;i-- )
+    {
+        fields.push(generateField(game));
+    }
+    return fields;
+
+}
 function generateAsteroids (asteroidsInField,
                             fieldsAmountMin,
                             fieldsAmountMax,

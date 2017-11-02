@@ -52,14 +52,14 @@
             this.newgame.anchor.set(0.5);
 
 
-            this.newgameT = game.add.text(0,0,T[lang].newgame,menu);
-            this.newgameT.anchor.set(0.5);
-            this.newgameT.fixedToCamera = true;
-            this.newgame.addChild(this.newgameT);
+            this.newgameLabel = game.add.text(0,0,T[lang].newgame,menu);
+            this.newgameLabel.anchor.set(0.5);
+            this.newgameLabel.fixedToCamera = true;
+            this.newgame.addChild(this.newgameLabel);
             this.newgame.fixedToCamera = true;
 
-            if(JSON.parse(localStorage.getItem("savegame"))!==null) {
-                this.continuegame = game.add.button(cx, cy + hs + 10, 'menubuttons', this.startNewGame, this, 1, 0, 1, 0);
+            if(JSON.parse(localStorage.getItem("savegame"))!==null || true) {
+                this.continuegame = game.add.button(cx, cy + hs + 10, 'menubuttons', this.continueGame, this, 1, 0, 1, 0);
                 this.continuegame.events.onInputOut.add(function () {
                     arguments[0].children[0].fill = "#ffffff";
                 }, this);
@@ -69,10 +69,10 @@
                 this.continuegame.anchor.set(0.5);
 
 
-                this.continuegameT = game.add.text(0, 0, T[lang].continuegame, menu);
-                this.continuegameT.anchor.set(0.5);
-                this.continuegameT.fixedToCamera = true;
-                this.continuegame.addChild(this.continuegameT);
+                this.continuegameLabel = game.add.text(0, 0, T[lang].continuegame, menu);
+                this.continuegameLabel.anchor.set(0.5);
+                this.continuegameLabel.fixedToCamera = true;
+                this.continuegame.addChild(this.continuegameLabel);
                 this.continuegame.fixedToCamera = true;
             }
 
@@ -105,7 +105,6 @@
             this.load.spritesheet('glow',assets+'glow.png',32,32,4,0,0);
             this.load.spritesheet('buttons',assets+'buttons.png',75,25,9);
             this.load.image('button',assets+'button.png');
-            this.load.spritesheet('button1',assets+'button1.png',96,32,3);
             this.load.spritesheet('spaceicons',assets+'spaceicons.png',16,16,5);
 
             this.load.image('planet',assets+'sprite_planet.png');
@@ -170,8 +169,8 @@
             this.game.galaxyFilter.update();
             if(!this.textupdated)
             {
-                this.newgameT.text+=" ";
-                this.newgameT.text=this.newgameT.text.trim();
+                this.newgameLabel.text+=" ";
+                this.newgameLabel.text=this.newgameLabel.text.trim();
                 this.textupdated = true;
             }
 

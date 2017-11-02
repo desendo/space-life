@@ -43,7 +43,6 @@ var SpaceLifeGame = {
 
     SpaceLifeGame.Boot = function (game) {
     };
-
     SpaceLifeGame.Boot.prototype = {
 
         preload: function () {

@@ -116,8 +116,19 @@ Alt.Weapon.prototype.destruct = function () {
 };
 
 
-var Planet = function (x,y,size,sprite,gravityDistance,name="Земля 2",colGroup,colGroups,game) {
-  this.init(x,y,size,sprite,gravityDistance,name="Земля 2",colGroup,colGroups,game);
+//var Planet = function (x,y,size,sprite,gravityDistance,name="Земля 2",colGroup,colGroups,game) {
+var Planet = function (data,game) {
+    var x = game.worldSize/2+data.x;
+    var y = game.worldSize/2+data.y;
+    var size = data.size;
+    var name = data.name;
+    var gravityRadius = data.gravityRadius;
+    var sprite = data.sprite;
+
+    var colGroup = game.spaceBodiesColGroup;
+    var colGroups = [game.spaceBodiesColGroup,game.playerColGroup];
+
+  this.init(x,y,size,sprite,gravityRadius,name="Земля 2",colGroup,colGroups,game);
   this.planetType = this.mars;
 };
 Planet.prototype = {
@@ -180,6 +191,7 @@ Planet.prototype.init = function (x,y,size,sprite,gravityDistance,name="Земл
 
     this.b.body.setCollisionGroup(colGroup);
     this.b.body.collides(colGroups,this.meteorStrike,this);
+    this.b.body.collides(colGroups);
     this.b.body.parentObject = this;
     this.b.parentObject = this;
 
@@ -207,6 +219,7 @@ Planet.prototype.deltaDir = function () {
 
 };
 Planet.prototype.meteorStrike = function () {
+    console.log("meteor strike");
   var meteor = arguments[1].parentObject;
     if(meteor.objType===ObjTypes.asteroid)
     {

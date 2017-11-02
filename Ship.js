@@ -161,8 +161,8 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.b.body.setCircle(this.b.width/3,0,0);
 
     this.b.body.setCollisionGroup(colGroup);
-    if(colGroups!==undefined)
-        this.b.body.collides(colGroups);
+    // if(colGroups!==undefined)
+    //     this.b.body.collides(colGroups);
 
     this.b.parentObject = this;
     this.b.body.parentObject = this;
@@ -275,57 +275,17 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.addMiniHud(1);
 
 
-    this.b.body.onBeginContact.add(this.contactHandler,this);
+   this.b.body.onBeginContact.add(this.contactHandler,this);
     this.b.body.onEndContact.add(function () {
         if(arguments[0].parentObject && arguments[0].parentObject.objType===ObjTypes.planet) {
             this.touched =false;
         }
-
     },this);
 
-    this.b.body.collides(this.game.spaceBodiesColGroup, this.colCallback, this);
-
-};
-Player.prototype.colCallback = function (shipBody,collidedBody) {
-
-
-
-
-
-    var mass = collidedBody.mass;
-    if(collidedBody.mass>100000)
-    {
-        mass = shipBody.mass*50;
-
-    }
-    var velSq = (collidedBody.velocity.x - shipBody.velocity.x)*(collidedBody.velocity.x - shipBody.velocity.x)/100+
-        (collidedBody.velocity.y - shipBody.velocity.y)*(collidedBody.velocity.y - shipBody.velocity.y)/100;
-
-    if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType===ObjTypes.planet) {
-
-        var velSq = shipBody.parentObject.oldVel*shipBody.parentObject.oldVel/100;
-    }
-    var collisionEnergy = velSq *mass;
-
-
-    if(shipBody.parentObject.isStarting!==true && velSq>1) {
-        console.log("Energy: "+collisionEnergy +", vel: "+velSq +", mass: "+mass);
-        shipBody.parentObject.DamageHandler(Math.floor(collisionEnergy) );
-
-    }
-    if(collidedBody.parentObject!==undefined && !shipBody.parentObject.isDead && collidedBody.parentObject.objType===ObjTypes.planet)
-    {
-        shipBody.parentObject.Land(collidedBody.parentObject);
-    }
-
-    // this.game.damageEmiter.x = this.contactPointX;
-    // this.game.damageEmiter.y = this.contactPointY;
-    // this.game.damageEmiter.start(true, 500,100,20);
-
-
 
 
 };
+
 Ship.prototype.contactHandler = function () {
 
 
@@ -801,6 +761,8 @@ function Player(x,y,game,hull,colGroup) {
     this.fuel=20;
     this.game.onPlayerInventoryChanged.add(this.calcVolumeMass,this);
 
+    this.b.body.collides(this.game.spaceBodiesColGroup, this.colCallback, this);
+
 
 };
 Player.prototype = Object.create(Ship.prototype);
@@ -878,11 +840,50 @@ Player.prototype.DamageHandler = function (dmg) {
 
 
 };
+Player.prototype.colCallback = function (shipBody,collidedBody) {
 
+
+
+    var mass = collidedBody.mass;
+    if(collidedBody.mass>100000)
+    {
+        mass = shipBody.mass*50;
+
+    }
+    var velSq = (collidedBody.velocity.x - shipBody.velocity.x)*(collidedBody.velocity.x - shipBody.velocity.x)/100+
+        (collidedBody.velocity.y - shipBody.velocity.y)*(collidedBody.velocity.y - shipBody.velocity.y)/100;
+
+    if(collidedBody.parentObject!==undefined && collidedBody.parentObject.objType===ObjTypes.planet) {
+
+        var velSq = shipBody.parentObject.oldVel*shipBody.parentObject.oldVel/100;
+    }
+    var collisionEnergy = velSq *mass;
+
+
+    if(shipBody.parentObject.isStarting!==true && velSq>1) {
+        console.log("Energy: "+collisionEnergy +", vel: "+velSq +", mass: "+mass);
+        shipBody.parentObject.DamageHandler(Math.floor(collisionEnergy) );
+
+    }
+    if(collidedBody.parentObject!==undefined && !shipBody.parentObject.isDead && collidedBody.parentObject.objType===ObjTypes.planet)
+    {
+
+        shipBody.parentObject.Land(collidedBody.parentObject);
+        console.log(collidedBody.parentObject);
+    }
+
+    // this.game.damageEmiter.x = this.contactPointX;
+    // this.game.damageEmiter.y = this.contactPointY;
+    // this.game.damageEmiter.start(true, 500,100,20);
+
+
+
+
+};
 Player.prototype.Land = function (planet = null) {
 
-
-    // this.isLanded = true;
+    console.log("Land",planet);
+    this.isLanded = true;
 
     this.b.exists   = false;
     this.b.exists   = true;
@@ -932,7 +933,7 @@ Player.prototype.update = function () {
     this.game.userInterface.shipInterface.shipSell.enable(this.isLanded && this.cargoItemsGroup.children.length > 0);
     this.readKeys();
     this.readKeyboardInput();
-    if (!this.isFreeFlight && !this.propulsing && this.fuel > 0 && this.thrustCurrentDamp>0 && !this.isLanded){
+    if (!this.isFreeFlight && !this.propulsing && this.fuel > 0 && this.thrustCurrentDamp>0 && !this.isLanded && !this.touched){
 
         this.compensate();
     }
@@ -989,9 +990,10 @@ Player.prototype.updateRelationsToPlanets = function () {
 
 
 
-                    if(this.isLanded && this.planetLanded!==null) {
+                    if(this.isLanded && this.planetLanded!==undefined) {
 
-                        console.log("landed");
+
+
                         this.globalStatus = "На поверхности планеты " + this.planetLanded.name;
 
                         this.b.exists= false;

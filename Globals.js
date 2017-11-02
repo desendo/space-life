@@ -57,3 +57,5 @@ var colorMiddle = "#9D9CA6";
 var colorLight = "#EDECF5";
 var colorFlue = "#0F41A6";
 var colorMetal = "#5283A3";
+
+

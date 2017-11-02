@@ -593,7 +593,6 @@ var Interface = {
 
         labels.labelSay.fixedToCamera = true;
 
-
         var  configArmorBar = {
             width: 130,
             height: 14,
@@ -635,6 +634,7 @@ var Interface = {
     updateLabels: function (game) {
         this.game=game;
         var ship = this.game.ship;
+
         if(this.resetFontBug)
         {this.c++;
             if(this.c>5) {
@@ -646,7 +646,9 @@ var Interface = {
         }
 
         var labels = this.labels;
+
         if (ship.fuel < 0) ship.fuel = 0;
+
         labels.labelFuel.text = "Топливо: "+ Math.round(ship.fuel*100)/100;
         labels.labelAcc.text = "Ускорение: "+ ship.acc.toFixed(2)+"g";
         labels.labelMass.text = "Масса: "+ ship.mass+"t";
