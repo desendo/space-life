@@ -77,10 +77,14 @@ Equipment.Hulls = {
             " Возможность установить гипердвигатель, при наличии достаточной ёмкости энергонакопителя, позволяет использовать корпус " +
             "и сейчас для разных задач.",
             mass: 150,
+            space: "150",
+
             shape: "ship1",
             sprite: "ship1",
+            scale: 2,
             secondaryEnginesSprite: "sidethrust1",
-            space: "50",
+
+
             equipmentSlots:
                 {
                     weapon1:

@@ -13,6 +13,9 @@ function Load(game,json) {
     data.asteroids.forEach(function (a) {
         var asteroid = new Asteroid(a, game);
 
-    })
+    });
+
+    game.ship = new Player(data.player, game);
+
 
 };
