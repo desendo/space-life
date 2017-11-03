@@ -46,6 +46,7 @@ var SpaceLifeGame = {
     SpaceLifeGame.Boot.prototype = {
 
         preload: function () {
+            this.game.canvas.oncontextmenu = function (e) { e.preventDefault(); }
 
             this.load.image('preloaderBar', assets+'loadingbar.png');
             //this.stage.backgroundColor = '#444';

@@ -128,8 +128,14 @@ var Planet = function (data,game) {
     var colGroup = game.spaceBodiesColGroup;
     var colGroups = [game.spaceBodiesColGroup,game.playerColGroup];
 
-  this.init(x,y,size,sprite,gravityRadius,name="Земля 2",colGroup,colGroups,game);
-  this.planetType = this.mars;
+
+    this.init(x,y,size,sprite,gravityRadius,name="Земля 2",colGroup,colGroups,game);
+
+    game.planets.push(this);
+    game.spaceObjects.push(this);
+    this.b.body.setMaterial(game.planetMaterial);
+
+    this.planetType = this.mars;
 };
 Planet.prototype = {
 
@@ -171,11 +177,13 @@ Planet.prototype.init = function (x,y,size,sprite,gravityDistance,name="Земл
     var atmRadius = image.width*size;
 
     this.b = this.game.add.sprite(this.x,this.y,this.sprite);
+    this.game.spaceObjectsLayer.add(this.b);
     this.gr = this.game.add.graphics(0,0);
     this.gr.beginFill('0xFFFFFF',0.08);
     this.gr.drawCircle(x,y,this.gravDist*2);
     this.gr.endFill();
     this.game.spaceObjectsLayer.add(this.gr);
+
     this.gravDistSquared = (gravityDistance)*(gravityDistance);
 
     this.b.scale.set(this.size);
@@ -301,143 +309,157 @@ Planet.prototype.generateSprite= function () {
     return g.generateTexture();
 
 };
-var Asteroid = {
 
-    constructor: function (x,y,size,sprite,game)
+var Asteroid = function (data,game) {
+    var x = data.x;
+    var y = data.y;
+    var size = data.size;
+    var sprite = data.sprite;
+    var frame = data.frame;
+    this.init(x,y,size,sprite,game,frame,data);
+
+
+};
+Asteroid.prototype = {
+    isAtmo : false,
+    isGrav : false,
+    damping : 0.1,
+    objType : ObjTypes.asteroid
+
+};
+Asteroid.prototype.init = function (x,y,size,sprite,game,frame) {
+
+    this.game = game;
+    this.x=x;
+    this.y = y;
+    this.size = size;
+    this.health = size*10 || size*1000*randomInteger(90,110)/100;
+
+
+    this.b = this.game.add.sprite(this.x,this.y,sprite);
+    this.b.anchor.set(0.5);
+    this.b.scale.set(this.size*4);
+    this.b.smoothed= false;
+
+    this.b.frame = frame || randomInteger(0,7);
+    this.b.rotation = 2*Math.PI*Math.random();
+    this.game.physics.p2.enable(this.b,false);
+    this.b.body.damping=0.0;
+    this.b.body.mass=size;
+
+    this.b.body.setCircle(this.b.width/2*0.8);
+
+    this.b.body.parentObject = this;
+    this.b.parentObject = this;
+    this.squaredRadius =  (this.b.width/2)*(this.b.width/2);
+    this.game.spaceObjectsLayer.add(this.b);
+    this.breakeQuant = this.health/10;
+    this.accumulatedDamage = 0;
+
+    this.initW = this.b.width;
+    this.finalScale= this.b.scale.x;
+    this.startHealth= this.health;
+
+
+
+
+    game.spaceObjects.push(this);
+
+    this.b.body.setCollisionGroup(game.spaceBodiesColGroup);
+    this.b.body.collides([game.spaceBodiesColGroup, game.playerColGroup]);
+
+    this.addBurningEffect();
+
+};
+Asteroid.prototype.addBurningEffect  = function () {
+    this.glow = this.game.add.group(this.b);
+    this.glow1 = this.game.add.sprite(0,0,'glow',0);
+    this.glow2 = this.game.add.sprite(0,0,'glow',1);
+    this.glow3 = this.game.add.sprite(0,0,'glow',2);
+
+    this.glow.add(this.glow3);
+    this.glow.add(this.glow2);
+    this.glow.add(this.glow1);
+    var k = 0;
+    this.glow.forEach(function (item,i) {
+        item.scale.set(0.5+k*0.2);
+        item.alpha = 0.0;
+        item.smoothed = false;
+        item.anchor.set(0.5);
+        k++;
+    },this);
+
+
+    this.glow.visible = false;
+    this.game.add.tween(this.glow.scale).to( {x: 1.05, y: 1.05}, 40, Phaser.Easing.Back.InOut, true, 0, false).yoyo(true);
+};
+
+Asteroid.prototype.affectByAtmo = function () {
+    this.glow.visible = true;
+    for(var i =0; i < this.glow.children.length; i++) {
+        this.game.add.tween(this.glow.children[i]).to({alpha: 0.8},400, Phaser.Easing.Linear.None, true);
+    }
+};
+Asteroid.prototype.getDamage = function (dmg,x,y) {
+    //var weapon = bullet.weapon;
+
+    this.accumulatedDamage += dmg * randomInteger(8,12)/10;
+    if(this.accumulatedDamage>this.breakeQuant)
     {
-        this.game = game;
-        this.x=x;
-        this.isAtmo = false;
-        this.isGrav = false;
-        this.damping = 0.1;
-        this.y = y;
-        this.size = size;
-        this.health = size*1000*randomInteger(90,110)/100;
 
-        this.objType = ObjTypes.asteroid;
+        this.totalDamage+=this.accumulatedDamage;
+        this.b.scale.set(this.finalScale * this.health / this.startHealth);
+        // this.b.body.setCircle(this.b.width/2*0.8);
+        this.squaredRadius = this.squaredRadius * this.b.width/this.initW *1.05;
+        this.health -= this.accumulatedDamage;
 
-        this.b = this.game.add.sprite(this.x,this.y,sprite);
-        this.b.anchor.set(0.5);
-        this.b.scale.set(this.size*4);
-        this.b.smoothed= false;
-
-        this.b.frame = randomInteger(0,7);
-        this.b.rotation = 2*Math.PI*Math.random();
-        this.game.physics.p2.enable(this.b,false);
-        this.b.body.damping=0.0;
-        this.b.body.mass=size;
-
-        this.b.body.setCircle(this.b.width/2*0.8);
-        this.initW = this.b.width;
-        this.b.body.parentObject = this;
-        this.b.parentObject = this;
-        this.squaredRadius =  (this.b.width/2)*(this.b.width/2);
-        this.game.spaceObjectsLayer.add(this.b);
-        this.breakeQuant = this.health/10;
+        if(x===undefined && y===undefined )
+        {
+            y = this.b.y;
+            x = this.b.x;
+        }
+        game.pickableItems.push(this.spawnMaterial(x,y,Math.round(this.accumulatedDamage * randomInteger(5, 8) / 10), Materials.asteroid1,this));
         this.accumulatedDamage = 0;
-        this.finalScale= this.b.scale.x;
-        this.startHealth= this.health;
-        this.totalDamage= 0;
+        if(this.health < this.breakeQuant*2) {
 
-        this.glow = this.game.add.group(this.b);
-        this.glow1 = this.game.add.sprite(0,0,'glow',0);
-        this.glow2 = this.game.add.sprite(0,0,'glow',1);
-        this.glow3 = this.game.add.sprite(0,0,'glow',2);
+            game.pickableItems.push(this.spawnMaterial(x,y,Math.round(this.health * randomInteger(5, 8) / 10), Materials.asteroid1,  this));
+            this.accumulatedDamage = 0;
+            this.health = -1;
 
-        this.glow.add(this.glow3);
-        this.glow.add(this.glow2);
-        this.glow.add(this.glow1);
-        var k = 0;
-        this.glow.forEach(function (item,i) {
-           item.scale.set(0.5+k*0.2);
-           item.alpha = 0.0;
-           item.smoothed = false;
-           item.anchor.set(0.5);
-           k++;
-        },this);
+            this.b.destroy();
 
-
-        this.glow.visible = false;
-
-
-        this.game.add.tween(this.glow.scale).to( {x: 1.05, y: 1.05}, 40, Phaser.Easing.Back.InOut, true, 0, false).yoyo(true);
-
-
-        this.affectByAtmo = function () {
-
-            this.glow.visible = true;
-            for(var i =0; i < this.glow.children.length; i++) {
-                this.game.add.tween(this.glow.children[i]).to({alpha: 0.8},400, Phaser.Easing.Linear.None, true);
-            }
-
-        };
-        this.getDamage = function (dmg,x,y) {
-            //var weapon = bullet.weapon;
-
-            this.accumulatedDamage += dmg * randomInteger(8,12)/10;
-            if(this.accumulatedDamage>this.breakeQuant)
-            {
-
-                this.totalDamage+=this.accumulatedDamage;
-                this.b.scale.set(this.finalScale * this.health / this.startHealth);
-               // this.b.body.setCircle(this.b.width/2*0.8);
-                this.squaredRadius = this.squaredRadius * this.b.width/this.initW *1.05;
-                this.health -= this.accumulatedDamage;
-
-                if(x===undefined && y===undefined )
-                {
-                    y = this.b.y;
-                    x = this.b.x;
-                }
-                game.pickableItems.push(this.spawnMaterial(x,y,Math.round(this.accumulatedDamage * randomInteger(5, 8) / 10), Materials.asteroid1,this));
-                this.accumulatedDamage = 0;
-                if(this.health < this.breakeQuant*2) {
-
-                    game.pickableItems.push(this.spawnMaterial(x,y,Math.round(this.health * randomInteger(5, 8) / 10), Materials.asteroid1,  this));
-                    this.accumulatedDamage = 0;
-                    this.health = -1;
-
-                    this.b.destroy();
-
-                }
-
-            }
-
-
-        };
-
-
-
-
-    },
-    update: function () {
-        if(!this.isAtmo) {
-         //   this.glow.visible = false;
         }
-        if(  this.b.body) {
-            if (this.isAtmo)
-                this.b.body.damping = 0.7;
-            else if (this.isGrav)
-                this.b.body.damping = 0;
-            else
-
-                this.b.body.damping = this.damping || 0;
-        }
-    },
-    explode: function () {
-        this.b.exists = false;
-         this.game.explosionEmiter.x = this.b.x;
-         this.game.explosionEmiter.y = this.b.y;
-         this.game.explosionEmiter.start(true,500,50,200);
-    },
-    spawnMaterial: function (x,y,materialVolume, materialType, obj) {
-
-
-        return Object.create(Material).constructor(x,y, this.game,
-            materialType,this.game.spaceBodiesColGroup,[this.game.spaceBodiesColGroup,this.game.playerColGroup],materialVolume);
-
 
     }
+
+
+};
+Asteroid.prototype.update = function () {
+    if(!this.isAtmo) {
+        //   this.glow.visible = false;
+    }
+    if(  this.b.body) {
+        if (this.isAtmo)
+            this.b.body.damping = 0.7;
+        else if (this.isGrav)
+            this.b.body.damping = 0;
+        else
+
+            this.b.body.damping = this.damping || 0;
+    }
+};
+
+Asteroid.prototype.explode = function () {
+    this.b.exists = false;
+    this.game.explosionEmiter.x = this.b.x;
+    this.game.explosionEmiter.y = this.b.y;
+    this.game.explosionEmiter.start(true,500,50,200);
+};
+Asteroid.prototype.spawnMaterial = function (x,y,materialVolume, materialType, obj) {
+
+
+    return Object.create(Material).constructor(x,y, this.game,
+        materialType,this.game.spaceBodiesColGroup,[this.game.spaceBodiesColGroup,this.game.playerColGroup],materialVolume);
 
 };
 

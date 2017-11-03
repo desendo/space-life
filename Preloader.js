@@ -81,7 +81,6 @@
         },
 
         preload: function () {
-            this.game.load.shader('galaxy', 'assets/galaxy.frag');
 
             this.game.time.advancedTiming = true;
 
@@ -93,25 +92,28 @@
 
             this.load.spritesheet('ship1',assets+'sprite_ship1.png',32,32,9,0,0);
             this.load.spritesheet('ship0',assets+'ship0.png',32,32,4,0,0);
+            this.load.spritesheet('sidethrust1',assets+'side_thrust1.png',5,5,5,0,0);
 
             this.load.spritesheet('grahem',assets+'grahem4.png',32,32,4,0,0);
             this.load.spritesheet('grahemdamages',assets+'grahemdamages.png',32,32,6,0,0);
             this.load.spritesheet('shipButton',assets+'shipButtons.png',48,16,16,0,0);
             this.load.spritesheet('pilotback',assets+'pilotback.png',32,32,6,0,0);
-            this.load.spritesheet('sidethrust1',assets+'side_thrust1.png',5,5,5,0,0);
 
 
             this.load.spritesheet('asteroids1',assets+'asteroids1.png',32,32,8,0,0);
             this.load.spritesheet('glow',assets+'glow.png',32,32,4,0,0);
             this.load.spritesheet('buttons',assets+'buttons.png',75,25,9);
-            this.load.image('button',assets+'button.png');
             this.load.spritesheet('spaceicons',assets+'spaceicons.png',16,16,5);
+
 
             this.load.image('planet',assets+'sprite_planet.png');
             this.load.image('laser',assets+'laser.png');
             this.load.image('rock',assets+'rock.png');
             this.load.image('part',assets+'part.png');
+            this.load.image('starsBackground',assets+'sprite_stars.png');
+            this.load.image('button',assets+'button.png');
 
+            //equipments
             this.load.spritesheet('lasers',assets+'lasers.png',16,16,3,0,0);
             this.load.spritesheet('engines',assets+'engines.png',16,16,3,0,0);
             this.load.spritesheet('generators',assets+'PowerGenerator.png',16,16,1,0,0);
@@ -119,14 +121,9 @@
             this.load.spritesheet('grabbers',assets+'Grabber.png',16,16,1,0,0);
             this.load.spritesheet('radars',assets+'Radar.png',16,16,1,0,0);
 
-            this.load.image('starsBackground',assets+'sprite_stars.png');
-            this.load.image('button',assets+'button.png');
-
             this.load.physics('shipShapesData', assets+'shipHullsShapes.json');
-
-
-
-
+            this.load.shader('noise', 'assets/shader1.frag');
+            this.load.shader('galaxy', 'assets/galaxy.frag');
 
         },
 

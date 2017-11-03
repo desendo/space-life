@@ -1,19 +1,18 @@
 /**
  * Created by lav010 on 02.11.2017.
  */
-function Load(game,data) {
+function Load(game,json) {
 
-    data = JSON.parse(data);
+    var data = JSON.parse(json);
+    console.log(data.asteroids);
 
-data.planets.forEach(function (p) {
+    data.planets.forEach(function (p) {
+        var planet = new Planet(p, game);
 
-    //var planet = new Planet(game.worldSize / 2 + p.x, game.worldSize / 2 +p.y, p.size, p.sprite , p.gravityRadius, 'Земля 2', game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup], game);
-    var planet = new Planet(p, game);
-    game.spaceObjectsLayer.add(planet.b);
-    game.planets.push(planet);
-    game.spaceObjects.push(planet);
-    planet.b.body.setMaterial(game.planetMaterial);
+    });
+    data.asteroids.forEach(function (a) {
+        var asteroid = new Asteroid(a, game);
 
+    })
 
-})
 };

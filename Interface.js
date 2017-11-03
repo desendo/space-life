@@ -92,6 +92,8 @@ var Interface = {
             mouseTooltip.tip.visible = false;
 
         };
+        mouseTooltip.tip.visible = false;
+        mouseTooltip.back.visible = false;
         return mouseTooltip
     },
 
