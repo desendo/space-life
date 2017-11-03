@@ -111,6 +111,7 @@ var Item =
             this.b = this.game.add.sprite(this.x,this.y,this.config.sprite,this.config.frame||0);
             this.b.tint = this.config.tint || '0xFFFFFF';
             this.b.parentObject = this;
+
             this.b.scale.set(this.size);
             this.originalSize = this.size;
             this.b.smoothed=false;
@@ -129,7 +130,7 @@ var Item =
             this.b.body.mass=0.1;
             this.b.body.velocity.x=randomInteger(-5,5)/10;
             this.b.body.velocity.y=randomInteger(-5,5)/10;
-
+            this.b.body.parentObject = this;
         },
         setToolTip: function () {
             this.setInfo();
@@ -163,6 +164,7 @@ var EquipmentObject = Object.create(Item);
 EquipmentObject.constructor = function (x, y, game, config, colGroup, colGroups)
 {   this.size = 1;
     this.equipment = config;
+    this.type =  config.type;
     this.mass = config.mass;
     this.volume = config.volume || 10;
     Item.constructor.apply(this,arguments);

@@ -62,13 +62,18 @@ DamagableObj.prototype.getDamage = function (damage) {
 
 
 };
-function Ship (x,y,game,hull,colGroup,colGroups) {
+function Ship (x,y,hull,game) {
 
 
+    var colGroup = game.spaceBodiesColGroup;
+    var colGroups = [game.spaceBodiesColGroup,game.playerColGroup];
     DamagableObj.apply(this,[hull.mass]);
     this.init(x,y,game,hull,colGroup,colGroups);
 
+
 };
+
+
 Ship.prototype = Object.create(DamagableObj.prototype);
 Ship.prototype.consumeFuel = function (value) {
 
@@ -132,8 +137,11 @@ Ship.prototype.update = function () {
     }
 
     this.miniHud.updatePosition();
-    this.updateWeapon();
-    this.checkBulletsForHits(this.game.spaceObjects);
+    if(this.weapon!==undefined) {
+        this.updateWeapon();
+
+        this.checkBulletsForHits(this.game.spaceObjects);
+    }
 
 };
 Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
@@ -151,6 +159,7 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.health =this.eq.hull.mass;
 
     this.b = this.game.add.sprite(x,y,this.eq.hull.sprite);
+
     this.b.anchor.set(0.5);
     this.b.smoothed=false;
     this.b.scale.set(this.eq.hull.scale || 2);
@@ -161,8 +170,15 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.b.body.setCircle(this.b.width/3,0,0);
 
     this.b.body.setCollisionGroup(colGroup);
+    this.game.spaceObjects.push(this);
     // if(colGroups!==undefined)
     //     this.b.body.collides(colGroups);
+
+
+    this.game.spaceObjectsLayer.add(this.b);
+
+    this.b.body.setMaterial(this.game.shipMaterial);
+
 
     this.b.parentObject = this;
     this.b.body.parentObject = this;
@@ -275,6 +291,7 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.addMiniHud(1);
 
 
+
    this.b.body.onBeginContact.add(this.contactHandler,this);
     this.b.body.onEndContact.add(function () {
         if(arguments[0].parentObject && arguments[0].parentObject.objType===ObjTypes.planet) {
@@ -353,7 +370,7 @@ Ship.prototype.updateWeapon = function () {
 Ship.prototype.checkBulletsForHits = function(gameObjects)    {
     var l = gameObjects.length;
     var gameObject = {};
-    for (var i = 0,j = this.weapon.bulletsAmountinPool;i<j;i++ ) {
+        for (var i = 0,j = this.weapon.bulletsAmountinPool;i<j;i++ ) {
         var b = this.weapon.bullets[i];
         if(b.visible)
         {
@@ -740,8 +757,17 @@ NPC.prototype.update = function () {
 };
 
 
-function Player(x,y,game,hull,colGroup) {
-    Ship.apply(this,arguments);
+function Player(data, game) {
+
+
+    this.loadData(data);
+    this.x = (game.worldSize/2 + this.x );
+    this.y = (game.worldSize/2 + this.y );
+
+    Ship.apply(this,[this.x || 0,this.y || 0,this.hull,game]);
+
+
+
     Object.defineProperty(this, "money", {
         get: function() {
             if (this._money > 0)
@@ -755,17 +781,28 @@ function Player(x,y,game,hull,colGroup) {
                 this._money = value;
         }
     });
-    this.initHull(hull);
+    this.initHull(this.hull);
     this.objType= ObjTypes.player;
-    this.money = 40;
-    this.fuel=20;
+
+
+    this.SetStartEq();
+    this.InitShipMenu();
+
     this.game.onPlayerInventoryChanged.add(this.calcVolumeMass,this);
 
     this.b.body.collides(this.game.spaceBodiesColGroup, this.colCallback, this);
 
 
 };
+
 Player.prototype = Object.create(Ship.prototype);
+Player.prototype.loadData = function (data) {
+
+    for (var i in data) {
+        this[i] = data[i];
+    }
+
+};
 Player.prototype.initHull = function (hull) {
     this.eq.hull = hull;
     this.cargoBayCap = hull.space;
@@ -786,6 +823,7 @@ Player.prototype.SetStartEq = function () {
 
     this.calcVolumeMass();
 
+    console.log(this.installedEquipmentGroup);
 
 };
 Player.prototype.readKeys = function () {
@@ -860,7 +898,7 @@ Player.prototype.colCallback = function (shipBody,collidedBody) {
     var collisionEnergy = velSq *mass;
 
 
-    if(shipBody.parentObject.isStarting!==true && velSq>1) {
+    if(shipBody.parentObject.isStarting!==true && velSq>1 && collidedBody.parentObject.objType!==ObjTypes.equipment) {
         console.log("Energy: "+collisionEnergy +", vel: "+velSq +", mass: "+mass);
         shipBody.parentObject.DamageHandler(Math.floor(collisionEnergy) );
 
@@ -1077,10 +1115,10 @@ Player.prototype.calcVolumeMass = function () {
 
 
 };
-Player.prototype.EquipmentFactory = function (eq,pushToCargo) {
+Player.prototype.EquipmentFactory = function (config,pushToCargo) {
 
         var equipment =
-            Object.create(EquipmentObject).constructor(this.b.x, this.b.y, this.game, eq,
+            Object.create(EquipmentObject).constructor(this.b.x, this.b.y, this.game, config,
                 this.game.spaceBodiesColGroup,
                 [this.game.spaceBodiesColGroup, this.game.playerColGroup]);
         this.game.pickableItems.push(equipment);
@@ -1166,21 +1204,25 @@ Player.prototype.Destruct = function () {
     this.game.onPlayerDead.dispatch();
     };
 Player.prototype.installItem = function (item) {
-        var ship = this;
 
 
-        var itemCfg = item.config;
-        for (var s in ship.eq.hull.equipmentSlots)
+        for (var s in this.eq.hull.equipmentSlots)
         {
-            var slot = ship.eq.hull.equipmentSlots[s];
+            var slot = this.eq.hull.equipmentSlots[s];
 
             if(!slot.occupied) {
 
-                if (slot.type === itemCfg.type) {
+
+
+                if (slot.type.name === item.type.name) {
+
                         slot.occupied = true;
                         slot.installedEquipment = item.b;
-                        ship.eq[itemCfg.type.name] = item.config;
+
+                        this.eq[item.type.name] = item.config;
+
                         this.installedEquipmentGroup.add(item.b);
+
                         this.calcEquipmentDependedParams();
                         return true;
 
@@ -1190,21 +1232,21 @@ Player.prototype.installItem = function (item) {
             }
 
         }
-        for (var s in ship.eq.hull.equipmentSlots)
+        for (var s in this.eq.hull.equipmentSlots)
         {
-            var slot = ship.eq.hull.equipmentSlots[s];
+            var slot = this.eq.hull.equipmentSlots[s];
 
             if(!slot.occupied) {
 
 
-                if (slot.type === Equipment.Types.any &&
-                    itemCfg.type !== Equipment.Types.weapon &&
-                    itemCfg.type !== Equipment.Types.engine) {
+                if (slot.type.name === Equipment.Types.any.name &&
+                    item.type !== Equipment.Types.weapon &&
+                    item.type !== Equipment.Types.engine) {
 
                     slot.occupied = true;
                     slot.installedEquipment = item.b;
 
-                    ship.eq[itemCfg.type.name] = item.config;
+                    this.eq[item.type.name] = item.config;
                     this.installedEquipmentGroup.add(item.b);
                     this.calcEquipmentDependedParams();
                     return true;

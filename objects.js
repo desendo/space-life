@@ -333,7 +333,7 @@ Asteroid.prototype.init = function (x,y,size,sprite,game,frame) {
     this.x=x;
     this.y = y;
     this.size = size;
-    this.health = size*10 || size*1000*randomInteger(90,110)/100;
+    this.health = size*1000*randomInteger(90,110)/100;
 
 
     this.b = this.game.add.sprite(this.x,this.y,sprite);
@@ -354,6 +354,7 @@ Asteroid.prototype.init = function (x,y,size,sprite,game,frame) {
     this.squaredRadius =  (this.b.width/2)*(this.b.width/2);
     this.game.spaceObjectsLayer.add(this.b);
     this.breakeQuant = this.health/10;
+
     this.accumulatedDamage = 0;
 
     this.initW = this.b.width;
@@ -407,8 +408,9 @@ Asteroid.prototype.getDamage = function (dmg,x,y) {
     if(this.accumulatedDamage>this.breakeQuant)
     {
 
-        this.totalDamage+=this.accumulatedDamage;
-        this.b.scale.set(this.finalScale * this.health / this.startHealth);
+
+        this.b.scale.set(this.finalScale * Math.sqrt(this.health / this.startHealth)*(this.health / this.startHealth));
+
         // this.b.body.setCircle(this.b.width/2*0.8);
         this.squaredRadius = this.squaredRadius * this.b.width/this.initW *1.05;
         this.health -= this.accumulatedDamage;
@@ -418,11 +420,13 @@ Asteroid.prototype.getDamage = function (dmg,x,y) {
             y = this.b.y;
             x = this.b.x;
         }
-        game.pickableItems.push(this.spawnMaterial(x,y,Math.round(this.accumulatedDamage * randomInteger(5, 8) / 10), Materials.asteroid1,this));
+
+
+        this.game.pickableItems.push(this.spawnMaterial(x,y,Math.round(this.accumulatedDamage * randomInteger(5, 8) / 10), Materials.asteroid1,this));
         this.accumulatedDamage = 0;
         if(this.health < this.breakeQuant*2) {
 
-            game.pickableItems.push(this.spawnMaterial(x,y,Math.round(this.health * randomInteger(5, 8) / 10), Materials.asteroid1,  this));
+            this.game.pickableItems.push(this.spawnMaterial(x,y,Math.round(this.health * randomInteger(5, 8) / 10), Materials.asteroid1,  this));
             this.accumulatedDamage = 0;
             this.health = -1;
 
@@ -431,6 +435,7 @@ Asteroid.prototype.getDamage = function (dmg,x,y) {
         }
 
     }
+
 
 
 };

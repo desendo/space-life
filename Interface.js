@@ -705,7 +705,7 @@ var Interface = {
             game.wheelDelta.setVal(ship,'thrustCurrentDamp', 5);
 
         });
-        labels.labelCustomStatus.text = ship.globalStatus ;
+        labels.labelCustomStatus.text = ship.globalStatus ||"";
 
         labels.labelFlightMode.text = ship.isFreeFlight ? "свободный полет (F)" : " автокомп."+ship.thrustCurrentDamp+"/"+ship.thrustMaximum+"  (F) ";
         labels.labelFlightMode.style.backgroundColor = ship.isFreeFlight ? "transparent" : "#ff9300";
