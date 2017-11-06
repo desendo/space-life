@@ -58,6 +58,7 @@ Equipment.Hulls = {
     Ship0:
         {
             name: "Hunter",
+            id: 'Ship0',
             title: "охотник",
             descr: "перехватчик",
             mass: 150,
@@ -70,6 +71,7 @@ Equipment.Hulls = {
 
     Ship1:
         {   name: "Droplet",
+            id: 'Ship1',
             title: "Капелька 2050",
             descr: "Корпус устаревшей модели 2050 года выпуска. Поступила в производство в 50 лет назад, за 4 года до начала эпохи гиперпереходов. " +
             "Модель хороша своей универсальностью и относительной дешевизной. " +
@@ -85,7 +87,7 @@ Equipment.Hulls = {
             secondaryEnginesSprite: "sidethrust1",
 
 
-            equipmentSlots:
+            slots:
                 {
                     weapon1:
                         {maxRoom: 10,pos: {x:0,y:-10},type: Equipment.Types.weapon,occupied:false},
@@ -126,6 +128,7 @@ Equipment.Hulls = {
 
     Ship2:
         {   name: "Droplet",
+            id: 'Ship2',
             mass: 500,
             shape: "ship1",
             sprite: "ship1",

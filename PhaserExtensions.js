@@ -28,7 +28,7 @@ Phaser.Button.prototype.setCustomDefaults = function (disFrame,enFrame)
 {
     this.disFrame = disFrame;
     this.enFrame = enFrame;
-    this.anchor.set(1,1);
+    this.anchor.set(0);
     this.scale.set(2);
     this.smoothed=false;
     this.fixedToCamera = true;

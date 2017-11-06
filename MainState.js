@@ -5,22 +5,10 @@
 
 (function(SpaceLifeGame) {
     SpaceLifeGame.MainState = function (game) {};
-    var day = 757800;
-    var worldSize=1500000;
-
-    var ship;
-    var planets=[];
-    var spaceObjects = [];
-    var pickableItems = [];
-
-
-    var playerColGroup ;
-    var spaceBodiesColGroup;
-    var starsBackground;
 
 
     var game;
-    var userInterface;
+
 
 
 SpaceLifeGame.MainState.prototype = {
@@ -30,9 +18,11 @@ SpaceLifeGame.MainState.prototype = {
 
       game = this.game;
 
+      game.day = 757800;
+
       game.counter = 0;
-      game.day = day;
-      game.worldSize=worldSize;
+
+      game.worldSize=1500000;
 
       game.wheelDelta = {};
       game.wheelDelta.val =0;
@@ -45,14 +35,15 @@ SpaceLifeGame.MainState.prototype = {
 
       game.globalStatus = '';
 
-      game.spaceObjects = spaceObjects;
-      game.planets = planets;
-      game.pickableItems = pickableItems;
+      game.spaceObjects = [];
+      game.planets = [];
+      game.pickableItems = [];
 
-      game.playerColGroup = playerColGroup;
-      game.spaceBodiesColGroup = spaceBodiesColGroup;
-      game.userInterface = userInterface;
+      game.playerColGroup = {};
+      game.spaceBodiesColGroup = {};
+      game.userInterface = {};
 
+      game.starsBackground ={};
       game.usrKeys = {};
 
       game.isEnabledMouse=true;
@@ -71,102 +62,51 @@ SpaceLifeGame.MainState.prototype = {
 
       game.spaceObjectsLayer = this.game.add.group();
       game.time.advancedTiming = true;
-      game.world.setBounds(0, 0, worldSize, worldSize);
-      game.worldSize = worldSize;
+      game.world.setBounds(0, 0, game.worldSize, game.worldSize);
       game.eventmanager = new EventManager(this.game);
-      createStarsBackground(starsBackground);
-
-      createGamePhysics();
-
-      var shipMaterial = game.physics.p2.createMaterial('shipMaterial');
-      var planetMaterial = game.physics.p2.createMaterial('planetMaterial');
-      game.planetMaterial = planetMaterial;
-      game.shipMaterial = shipMaterial;
       game.input.mouse.mouseWheelCallback = mouseWheel;
+
+      createStarsBackground(game.starsBackground);
+      createGamePhysics();
       SetGameControls();
       createGameCollisionGroups();
       game.userInterface = Object.create(Interface).constructor([150, 100, 150], game);
 
-      if(this.game.continue)
+      if(this.game.isLoading && this.game.saveGameKey!==undefined  && this.game.saveGameKey!==null)
       {
-            console.log("continue", this.game.continue);
-            Load(this.game, localStorage.getItem("savegame"));
+            console.log("loaded", this.game.saveGameKey);
+            Load(this.game, localStorage.getItem(this.game.saveGameKey));
 
       }
       else {
+            console.log("started new game");
             var initialSave = generateWorld();
             Load(this.game, JSON.stringify(initialSave));
-            localStorage.setItem("savegame",JSON.stringify(initialSave));
+            localStorage.removeItem('save-quicksave');
 
 
+              }
+      if(game.ship !==undefined) {
 
-
-
-
-        }
-        ship = game.ship;
-        if (false && !this.game.continue)
-        {
-            planet = new Planet(worldSize / 2, worldSize / 2, 18, 'planet', 1500, 'Земля 2', game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup], game);
-            planet2 = new Planet(worldSize / 2 + 50000, worldSize / 2 + 4000, 12, 'planet', 900, 'Земля 3', game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup], game);
-            game.spaceObjectsLayer.add(planet.b);
-            game.spaceObjectsLayer.add(planet2.b);
-            game.planets.push(planet);
-            game.planets.push(planet2);
-            planet.b.body.setMaterial(planetMaterial);
-            planet2.b.body.setMaterial(planetMaterial);
-
-
-
-            var pos = new Phaser.Point(planets[0].x, (planets[0].y - planets[0].b.width * 0.56 - 300));
-
-            ship = new Player(pos.x, pos.y, game, Equipment.Hulls.Ship1, game.playerColGroup);
-             game.spaceObjectsLayer.add(ship.b);
-            ship.SetStartEq();
-            // game.npc1 = new NPC(pos.x - 40, pos.y - 60, game, Equipment.Hulls.Ship0, game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup]);
-            // game.npc2 = new NPC(pos.x + 30, pos.y - 40, game, Equipment.Hulls.Ship0, game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup]);
-            game.ship = ship;
-
-            game.ship.b.body.setMaterial(shipMaterial);
-            spaceObjects.push(game.ship);
-            // spaceObjects.push(game.npc1);
-            // spaceObjects.push(game.npc2);
-            spaceObjects.push(planet);
-            spaceObjects.push(planet2);
-
-            createCameraFadeOut();
-
-
-            this.camera.follow(ship.b);
-            generateAsteroids(5, 3, 4, 'asteroids1', game, game.spaceBodiesColGroup, [game.spaceBodiesColGroup, game.playerColGroup]);
-
-            //collisions events
-
-            ship.InitShipMenu();
-          game.interfaceGroup.z=-100;
-
+            this.camera.follow(game.ship.b);
 
         }
-
-        this.camera.follow(game.ship.b);
-
-        game.damageEmiter = this.game.add.emitter(ship.b.x,ship.b.y,30);
-        game.damageEmiter.makeParticles('part');
-        game.damageEmiter.gravity = 0;
-        game.damageEmiter.setAlpha(1, 0, 500, Phaser.Easing.Linear.None, false);
-        game.damageEmiter.forEach(function(p) {p.tint ='0xe94f00';},this);
+      game.damageEmiter = this.game.add.emitter(0,0,30);
+      game.damageEmiter.makeParticles('part');
+      game.damageEmiter.gravity = 0;
+      game.damageEmiter.setAlpha(1, 0, 500, Phaser.Easing.Linear.None, false);
+      game.damageEmiter.forEach(function(p) {p.tint ='0xe94f00';},this);
 
 
 
-        game.explosionEmiter = this.game.add.emitter(ship.b.x,ship.b.y,600);
+        game.explosionEmiter = this.game.add.emitter(0,0,600);
         game.explosionEmiter.makeParticles('part');
         game.explosionEmiter.gravity = 0;
-        // this.game.explosionEmiter.minParticleSpeed=0.2;
-        // this.game.explosionEmiter.maxParticleSpeed=0.5;
+
         game.explosionEmiter.setAlpha(1, 0.5, 1500, Phaser.Easing.Linear.None,false);
         game.explosionEmiter.forEach(function(p) {p.tint ='0xffc200';},this);
 
-        game.landEmiter = this.game.add.emitter(ship.b.x,ship.b.y,30);
+        game.landEmiter = this.game.add.emitter(0,0,30);
         game.landEmiter.makeParticles('part');
         game.landEmiter.gravity = 0;
         game.landEmiter.setAlpha(1, 0.5, 1500, Phaser.Easing.Linear.None,false);
@@ -175,22 +115,24 @@ SpaceLifeGame.MainState.prototype = {
         game.onPlayerDead.add(gameOver,this);
         game.onPlayerDead.add(this.game.userInterface.pilot.disConnect,this);
 
+        game.onQuickLoad.add(game.loadGame,game);
+        game.onQuickSave.add(game.saveGame,game);
 
 
     },
     update: function() {
 
         game.noiseFilter.update();
-        gameObjectsUpdate();
-        optimizeRendering();
+        gameObjectsUpdate(game.spaceObjects);
+        optimizeRendering(game.spaceObjects);
 
         //ship.playAnimations();
 
         // ship.readKeyboardInput();
         //ship.updateRelationsToPlanets();
 
-        if(ship!==undefined) {
-            ship.postUpdate();
+        if(game.ship!==undefined) {
+            game.ship.postUpdate();
 
 
             game.userInterface.updateLabels(game);
@@ -237,14 +179,14 @@ function fadeComplete() {
 
         game.state.start('GameOver');
     }
-function gameObjectsUpdate(){
+function gameObjectsUpdate(spaceObjects){
     for (var i= 0,j =spaceObjects.length; i<j;i++ )
     {
         if(spaceObjects[i].update !== undefined && spaceObjects[i].b.visible && spaceObjects[i].b.renderable)
             spaceObjects[i].update();
     }
 }
-function optimizeRendering() {
+function optimizeRendering(spaceObjects) {
         if(this.x20counter===0) {
             this.x20counter = this.x20;
             spaceObjects.forEach(function (sprite) {
@@ -284,9 +226,9 @@ function createStarsBackground(starsBackground) {
     starsBackground.scale.set(3);
     starsBackground.smoothed=false;
     starsBackground.update = function () {
-        if (ship!==undefined) {
-            this.tilePosition.x -= ship.b.body.velocity.x / 200;
-            this.tilePosition.y -= ship.b.body.velocity.y / 200;
+        if (game.ship!==undefined) {
+            this.tilePosition.x -= game.ship.b.body.velocity.x / 200;
+            this.tilePosition.y -= game.ship.b.body.velocity.y / 200;
         }
     };
     game.spaceObjectsLayer.add(starsBackground);
@@ -297,6 +239,8 @@ function createGamePhysics() {
     game.physics.p2.applyDamping = true;
     game.physics.p2.restitution = 0.0;
     game.physics.p2.setImpactEvents(true);
+    game.shipMaterial = game.physics.p2.createMaterial('shipMaterial');
+    game.planetMaterial = game.physics.p2.createMaterial('planetMaterial');
 
 
 }
@@ -330,6 +274,8 @@ function SetGameControls(reset=true) {
         keys.engineDampPlusKey = Phaser.KeyCode.V;
         keys.switchFreeFlight = Phaser.KeyCode.F;
         keys.openShipMenuKey = Phaser.KeyCode.I;
+        keys.quickSave = Phaser.KeyCode.N;
+        keys.quickLoad = Phaser.KeyCode.L;
 
 
     }
@@ -339,8 +285,8 @@ function SetGameControls(reset=true) {
 
     game.input.keyboard.addKeyCapture([Phaser.Keyboard.SPACEBAR]);
 
-    var v = JSON.stringify(keys);
-    localStorage.setItem("keyboard",v);
+    var keysSet = JSON.stringify(keys);
+    localStorage.setItem("keyboard",keysSet);
     game.usrKeys = userkeys;
 
 
@@ -354,10 +300,27 @@ function generateWorld(){
     var save = {
 
     player:{
-        x: 200,
-        y: 470,
-        hull: Equipment.Hulls.Ship1,
+        x: -1000,
+        y: -1000-32*18/2-21,
+        simulation: false,
+
         fuel:20,
+        eq : {
+            hull: Equipment.Hulls.Ship1,
+            weapon: Equipment.Weapons.Laser1,
+            radar: Equipment.Radars.Radar1,
+            grabber: Equipment.Grabbers.Grab1,
+            engine: Equipment.Engines.RD300
+        },
+        cargo:[
+            {
+                type: ObjTypes.material,
+                material: Materials.Asteroids.Minerals.typeS,
+                volume:10},
+            {
+                type: ObjTypes.equipment,
+                eq: Equipment.Weapons.Laser2}
+            ]
 
 
     },
@@ -380,7 +343,6 @@ function generateWorld(){
     asteroids:[]
 
 };
-    var pos = new Phaser.Point(save.planets[0].x, (save.planets[0].y - 500));
     save.asteroids = generateAst(5, 5);
     return save;
 }
@@ -394,8 +356,8 @@ function generateAst(asteroidsInField, fieldsAmount) {
         field.x=0;
         field.y=0;
 
-        field.x = randomInteger(game.worldSize*0.5-8000,game.worldSize*0.5+8000);
-        field.y = randomInteger(game.worldSize*0.5-8000,game.worldSize*0.5+8000);
+        field.x = randomInteger(-8000,8000);
+        field.y = randomInteger(-8000,8000);
         field.asteroids = [];
         field.radius = 150;
         var asteroidsAmount = randomInteger(asteroidsInField*0.7,asteroidsInField*1.3);
@@ -405,11 +367,11 @@ function generateAst(asteroidsInField, fieldsAmount) {
             var u = Math.random() +Math.random();
             var distFromFieldCenter = u>1 ? 2-u :u;
             distFromFieldCenter *= field.radius;
-            var scale = randomInteger(2,5)/10;
+            var scale = randomInteger(8,20)/10;
 
             var x = field.x+distFromFieldCenter*Math.cos(angleFromFieldCenter);
             var y = field.y+distFromFieldCenter*Math.sin(angleFromFieldCenter);
-            asteroids.push({x:x, y:y,sprite: asteroidSpriteSheet,size:scale,frame: randomInteger(0,7)})
+            asteroids.push({x:x, y:y,sprite: asteroidSpriteSheet,size:scale,frame: randomInteger(0,7),material: Materials.Asteroids.Minerals.typeM})
 
 
 

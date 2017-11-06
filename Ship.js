@@ -62,14 +62,11 @@ DamagableObj.prototype.getDamage = function (damage) {
 
 
 };
-function Ship (x,y,hull,game) {
-
-
+function Ship (x,y,game,data) {
     var colGroup = game.spaceBodiesColGroup;
     var colGroups = [game.spaceBodiesColGroup,game.playerColGroup];
-    DamagableObj.apply(this,[hull.mass]);
-    this.init(x,y,game,hull,colGroup,colGroups);
-
+    DamagableObj.apply(this,[this.eq.hull.mass]);
+    this.init(x,y,game,colGroup,colGroups);
 
 };
 
@@ -81,7 +78,6 @@ Ship.prototype.consumeFuel = function (value) {
         this.fuel -= value;
     }
 };
-
 Ship.prototype.compensate = function(){
 
 
@@ -90,15 +86,12 @@ Ship.prototype.compensate = function(){
         var dampQuotient = 1;
         var dumpThreshold = 4;
 
-        if (this.vel < dumpThreshold)        {            dampQuotient=Math.sqrt(this.vel/dumpThreshold);        }
+        if (this.vel < dumpThreshold) {dampQuotient=Math.sqrt(this.vel/dumpThreshold);}
 
 
         if (Math.cos(this.turnAngle) > 0) {
             this.backward(Math.cos(this.turnAngle) * dampQuotient ,true);
-
                 this.sideThrust(-Math.sin(this.turnAngle)* dampQuotient ,true);
-
-
         }
         else
         {
@@ -122,7 +115,6 @@ Ship.prototype.affectByAtmo = function(){
 
 
 };
-
 Ship.prototype.update = function () {
 
     this.isThrottling=false;
@@ -137,17 +129,15 @@ Ship.prototype.update = function () {
     }
 
     this.miniHud.updatePosition();
-    if(this.weapon!==undefined) {
+    if(this.weapon!==undefined && this.weapon!==null) {
         this.updateWeapon();
 
         this.checkBulletsForHits(this.game.spaceObjects);
     }
 
 };
-Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
+Ship.prototype.init =  function (x,y,game,colGroup,colGroups) {
     this.game = game;
-    this.eq ={};
-    this.eq.hull = hull;
 
     this.acc = 0;
     this.vel = 0;
@@ -286,7 +276,7 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
     this.planetsTotalGravity = new Phaser.Point(0,0);
     this.knownObjects = [];
 
-    //this.SetStartEq();
+    //this.createPickableObjects();
     this.initSecondaryEngines();
     this.addMiniHud(1);
 
@@ -302,7 +292,6 @@ Ship.prototype.init =  function (x,y,game,hull,colGroup,colGroups) {
 
 
 };
-
 Ship.prototype.contactHandler = function () {
 
 
@@ -731,6 +720,16 @@ Ship.prototype.calcEquipmentDependedParams = function () {
 
 
 };
+Ship.prototype.loadData = function (data) {
+
+    for (var i in data) {
+        this[i] = data[i];
+        //console.log(data[i]);
+    }
+
+    this.hull = Equipment.Hulls[data.eq.hull.id];
+
+};
 
 function NPC (x,y,game,hull,colGroup,colGroups){
     Ship.apply(this,arguments);
@@ -761,13 +760,20 @@ function Player(data, game) {
 
 
     this.loadData(data);
-    this.x = (game.worldSize/2 + this.x );
-    this.y = (game.worldSize/2 + this.y );
 
-    Ship.apply(this,[this.x || 0,this.y || 0,this.hull,game]);
+    this.x = game.worldSize/2 + this.x;
+    this.y = game.worldSize/2 + this.y;
 
-
-
+    Ship.apply(this, [this.x || 0, this.y || 0, game] );
+    if (!this.simulation)
+    {
+        this.b.exists = false;
+        this.b.alive = true;
+        this.b.visible = true;
+    }
+    this.b.body.velocity.x = data.velocityx || 0;
+    this.b.body.velocity.y = data.velocityy || 0;
+    this.b.body.rotation = data.rotation || 0;
     Object.defineProperty(this, "money", {
         get: function() {
             if (this._money > 0)
@@ -781,54 +787,127 @@ function Player(data, game) {
                 this._money = value;
         }
     });
-    this.initHull(this.hull);
+    this.initHull();
     this.objType= ObjTypes.player;
 
 
-    this.SetStartEq();
+    this.createPickableObjects();
     this.InitShipMenu();
 
     this.game.onPlayerInventoryChanged.add(this.calcVolumeMass,this);
 
     this.b.body.collides(this.game.spaceBodiesColGroup, this.colCallback, this);
-
+    this.pressedQL = false;
+    this.pressedQS = false;
 
 };
-
 Player.prototype = Object.create(Ship.prototype);
-Player.prototype.loadData = function (data) {
 
-    for (var i in data) {
-        this[i] = data[i];
+Player.prototype.initHull = function () {
+
+    this.cargoBayCap = this.eq.hull.space;
+    this.name = this.eq.hull.name;
+};
+Player.prototype.createPickableObjects = function () {
+
+    for (var equipment in this.eq)
+    {
+        if(equipment !=='hull') {
+            var e = this.eq[equipment];
+            this.EquipmentFactory(e,false)
+        }
+    }
+    for(var i =0; i<this.cargo.length;i++)
+    {
+
+        var item=null;
+        if(this.cargo[i].type.name === ObjTypes.material.name)
+
+        {
+
+
+            item = Object.create(Material).constructor(0,0, this.game,
+                this.cargo[i].material,this.game.spaceBodiesColGroup,[this.game.spaceBodiesColGroup,this.game.playerColGroup],this.cargo[i].volume);
+            this.cargoItemsGroup.add(item.b);
+            this.game.pickableItems.push(item);
+        }
+
+        if(this.cargo[i].type.name === ObjTypes.equipment.name)
+        {
+            this.EquipmentFactory(this.cargo[i].eq,true);
+
+        }
+
+
+
     }
 
-};
-Player.prototype.initHull = function (hull) {
-    this.eq.hull = hull;
-    this.cargoBayCap = hull.space;
-    this.name = hull.name;
-};
-Player.prototype.SetStartEq = function () {
 
-    var laser1 = this.EquipmentFactory(Equipment.Weapons.Laser1,false);
-    var engine = this.EquipmentFactory(Equipment.Engines.RD300,false);
-    var grabber = this.EquipmentFactory(Equipment.Grabbers.Grab1,false);
-    var radar = this.EquipmentFactory(Equipment.Radars.Radar1,false);
-
-
-    this.game.userInterface.shipMenu.shipCargo.populateGrid(this);
+    this.game.userInterface.shipMenu.shipCargo.updateCargoView(this);
     this.game.userInterface.shipMenu.shipView.createShipView(this);
-    this.game.userInterface.shipMenu.shipView.updateShipView(this)
+    this.game.userInterface.shipMenu.shipView.updateShipView(this);
 
 
     this.calcVolumeMass();
 
-    console.log(this.installedEquipmentGroup);
+
+};
+Player.prototype.getSaveData = function () {
+    var getEq = function(player) {
+        var eq={};
+        for(var i = 0; i< player.installedEquipmentGroup.children.length;i++)
+        {
+            var obj = player.installedEquipmentGroup.children[i].parentObject;
+             eq[obj.type.name] = obj.equipment;
+
+        }
+
+        eq.hull= player.hull;
+        return eq;
+    };
+    var getCargo = function(player) {
+
+        var cargo = player.cargoItemsGroup.children.map(function (item) {
+            if(item.parentObject.objType === ObjTypes.material) {
+                return {type: item.parentObject.objType , material: item.parentObject.material,volume:item.parentObject.volume };
+            }
+            if(item.parentObject.objType === ObjTypes.equipment) {
+                return {type: item.parentObject.objType , eq: item.parentObject.equipment,};
+            }
+        });
+        return cargo
+    };
+
+
+    var savedata ={};
+    savedata.eq = getEq(this);
+    savedata.cargo = getCargo(this);
+    savedata.x = this.b.x - this.game.worldSize/2;
+    savedata.y = this.b.y - this.game.worldSize/2;
+    savedata.fuel = this.fuel;
+    savedata.money = this.money;
+    savedata.rotation = this.b.body.rotation;
+    savedata.simulation = this.b.exists;
+
+
+    savedata.velocityx = this.b.body.velocity.x;
+    savedata.velocityy = this.b.body.velocity.y;
+    savedata.isFreeFlight = this.isFreeFlight;
+    return savedata;
+
+
 
 };
 Player.prototype.readKeys = function () {
     var game = this.game;
+
+    if (game.usrKeys.quickLoad.isDown && !this.pressedQL) game.onQuickLoad.dispatch();
+    this.pressedQL = game.usrKeys.quickLoad.isDown;
+
     if(!this.isDead) {
+        if (game.usrKeys.quickSave.isDown && !this.pressedQS) game.onQuickSave.dispatch();
+        this.pressedQS = game.usrKeys.quickSave.isDown;
+
         if (game.usrKeys.rotLeftKey.isDown) {
             this.accRotateLeft();
         }
@@ -907,7 +986,7 @@ Player.prototype.colCallback = function (shipBody,collidedBody) {
     {
 
         shipBody.parentObject.Land(collidedBody.parentObject);
-        console.log(collidedBody.parentObject);
+
     }
 
     // this.game.damageEmiter.x = this.contactPointX;
@@ -920,7 +999,6 @@ Player.prototype.colCallback = function (shipBody,collidedBody) {
 };
 Player.prototype.Land = function (planet = null) {
 
-    console.log("Land",planet);
     this.isLanded = true;
 
     this.b.exists   = false;
@@ -929,6 +1007,7 @@ Player.prototype.Land = function (planet = null) {
     // this.b.visible  = true;
 
     this.planetLanded = planet;
+    this.game.onPlayerLanded.dispatch(this.planetLanded );
     this.isStarting = false;
     this.vel = 0;
     this.oldVel = 0;
@@ -936,7 +1015,7 @@ Player.prototype.Land = function (planet = null) {
 };
 Player.prototype.unLand = function () {
 
-
+    this.game.onPlayerUnlanded.dispatch(this.planetLanded);
     this.isStarting = true;
 
 
@@ -960,15 +1039,14 @@ Player.prototype.update = function () {
 
     if(this.b.exists && this.b.body!==null) {
 
-
-
         this.updateItemsToGrab();
 
         this.updateRelationsToPlanets();
+
+        this.game.userInterface.shipInterface.shipGrab.enable(this.eq.grabber !== null && this.itemsToGrabToCargo.length > 0);
+        //this.game.userInterface.shipInterface.shipFuel.enable(this.isLanded && this.money > 0);
+        //this.game.userInterface.shipInterface.shipSell.enable(this.isLanded && this.cargoItemsGroup.children.length > 0);
     }
-    this.game.userInterface.shipInterface.shipGrab.enable(this.eq.grabber!==null && this.itemsToGrabToCargo.length > 0);
-    this.game.userInterface.shipInterface.shipFuel.enable(this.isLanded && this.money > 0);
-    this.game.userInterface.shipInterface.shipSell.enable(this.isLanded && this.cargoItemsGroup.children.length > 0);
     this.readKeys();
     this.readKeyboardInput();
     if (!this.isFreeFlight && !this.propulsing && this.fuel > 0 && this.thrustCurrentDamp>0 && !this.isLanded && !this.touched){
@@ -990,7 +1068,7 @@ Player.prototype.updateRelationsToPlanets = function () {
             var d = this.sqaredDistance(planet.x, planet.y);
 
 
-            if (d <planet.gravDistSquared ) {
+            if (d <planet.gravRadSquared ) {
 
                 //var cross = -planet.dirToShip.x*this.dir.y -(-1*planet.dirToShip.y)*this.dir.x;
                 // var oldcross = planet.oldDirToShip.x*this.dir.y -(-1*planet.oldDirToShip.y)*this.dir.x;
@@ -1166,10 +1244,7 @@ Player.prototype.grabItems = function () {
         if (grabbedItems>0)
 
         {
-            //console.log("grabbed ",grabbedItems);
-            //console.log("in cargo ",this.cargoItemsGroup.length);
 
-            //this.calcVolumeMass();
             this.game.onPlayerInventoryChanged.dispatch(this);
 
         }
@@ -1185,9 +1260,10 @@ Player.prototype.dropItem = function (item) {
         this.game.world.add(item.b);
 
 
-        item.b.reset(this.b.x,this.b.y+5);
+        item.b.reset(this.b.x,this.b.y+25);
         item.b.scale.set(item.originalSize);
         item.b.sendToBack();
+        item.b.input.disableDrag();
 
         this.calcVolumeMass();
         this.calcEquipmentDependedParams();
@@ -1206,13 +1282,11 @@ Player.prototype.Destruct = function () {
 Player.prototype.installItem = function (item) {
 
 
-        for (var s in this.eq.hull.equipmentSlots)
+        for (var s in this.eq.hull.slots)
         {
-            var slot = this.eq.hull.equipmentSlots[s];
+            var slot = this.eq.hull.slots[s];
 
             if(!slot.occupied) {
-
-
 
                 if (slot.type.name === item.type.name) {
 
@@ -1232,16 +1306,15 @@ Player.prototype.installItem = function (item) {
             }
 
         }
-        for (var s in this.eq.hull.equipmentSlots)
+        for (var s in this.eq.hull.slots)
         {
-            var slot = this.eq.hull.equipmentSlots[s];
+            var slot = this.eq.hull.slots[s];
 
             if(!slot.occupied) {
 
-
                 if (slot.type.name === Equipment.Types.any.name &&
-                    item.type !== Equipment.Types.weapon &&
-                    item.type !== Equipment.Types.engine) {
+                    item.type.name !== Equipment.Types.weapon.name &&
+                    item.type.name !== Equipment.Types.engine.name) {
 
                     slot.occupied = true;
                     slot.installedEquipment = item.b;
@@ -1268,20 +1341,20 @@ Player.prototype.uninstallItem = function (item) {
         var ship = this;
         var itemCfg = item.config;
 
-        for (var s in ship.eq.hull.equipmentSlots)
+        for (var s in ship.eq.hull.slots)
         {
 
 
 
-            if ((ship.eq.hull.equipmentSlots[s].installedEquipment)===
+            if ((ship.eq.hull.slots[s].installedEquipment)===
                 (item.b ))
             {
 
-                ship.eq.hull.equipmentSlots[s].occupied = false;
-                ship.eq.hull.equipmentSlots[s].installedEquipment = null;
+                ship.eq.hull.slots[s].occupied = false;
+                ship.eq.hull.slots[s].installedEquipment = null;
 
 
-                var t = ship.eq.hull.equipmentSlots[s].type.name;
+                var t = ship.eq.hull.slots[s].type.name;
                 ship.eq[itemCfg.type.name] = null;
 
 
@@ -1320,7 +1393,7 @@ Player.prototype.sellMaterials = function () {
             if(itemsTotal>0)
             this.sellItem(items, itemsTotal);
 
-            //this.game.userInterface.shipMenu.shipCargo.populateGrid(this.cargoItems);
+            //this.game.userInterface.shipMenu.shipCargo.updateCargoView(this.cargoItems);
         }
 
     };
@@ -1496,10 +1569,6 @@ if(this.game.input.enabled && !this.isDead) {
 
 }
 };
-Player.prototype.controlByMouse = function (pointer) {
-
-
-    };
 Player.prototype.postUpdate = function () {
         for (var i = this.game.planets.length; i > 0; i--) {
             var planet = this.game.planets[i - 1];
@@ -1520,7 +1589,8 @@ Player.prototype.sqaredDistance  = function (x, y) {
     };
 Player.prototype.updateRadar = function (miniMap) {
     this.game.spaceObjects.forEach(function (gameObject) {
-        if(!this.knownObjects.includes(gameObject) && this.sqaredDistance(gameObject.b.x,gameObject.b.y)<this.radarRadius)
+        if(!this.knownObjects.includes(gameObject)
+            && this.sqaredDistance(gameObject.b.x,gameObject.b.y)<this.squa)
         {
             this.knownObjects.push(gameObject);
         }
@@ -1528,4 +1598,3 @@ Player.prototype.updateRadar = function (miniMap) {
     });
 
 };
-

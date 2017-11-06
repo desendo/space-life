@@ -10,7 +10,7 @@ var Interface = {
         this.pilot = new Interface.Pilot('grahem',this);
         this.labels = new Interface.Labels(this);
 
-        this.shipInterface = new Interface.ShipButtons(sizes,this);
+        this.shipInterface = new Interface.ShipIconsButtons(sizes,this);
         this.shipMenu = new Interface.ShipMenu(this);
         this.mouseTooltip = new Interface.MouseTooltip(this);
 
@@ -22,9 +22,14 @@ var Interface = {
             }
         },this);
 
+        this.game.onPlayerLanded.add(this.landedHandler,this);
+
         return this;
     },
+    landedHandler: function () {
+      //  console.log(arguments);
 
+    },
     updateIndicators: function (params) {
 
 
@@ -100,11 +105,9 @@ var Interface = {
     ShipMenu : function (parent) {
         this.game = parent.game;
         var game = this.game;
-        var ship = this.game.ship;
         var w = 400;
         var h = 500;
-        var zones =
-            {
+        var zones = {
 
                 shipInfo: {x:w*3/8,y:0,w:w*5/8,h:h*3/10,an:0},
                 shipContextInfo: {x:w*3/8,y:h*3/10,w:w*5/8,h:h*1/10,an:0},
@@ -184,7 +187,7 @@ var Interface = {
         zones.data.zonesGroup = this.game.add.group(this.game.interfaceGroup );
         zones.data.shipCargoGroup = {};
         zones.data.installedEquipmentGroup = {};
-        var  xPadding = (this.game.camera.width-w)/1.1;
+        //var  xPadding = (this.game.camera.width-w)/1.1;
         var  xPadding = 40;
         zones.data.xPadding = xPadding;
         var  yPadding = (this.game.camera.height-h)/5;
@@ -279,27 +282,23 @@ var Interface = {
             var x = this.x + zones.data.xPadding + this.grid.cellW * (g+1) - cellW / 2;
             var y = this.y + zones.data.yPadding + this.grid.cellH * (k+1) - cellH / 2;
 
-
-
-
-
             item = item.parentObject;
-
-            item.b.scale.set( item.scale *0.8 || this.grid.cellW/item.b.width *0.8);
+            item.scale = cellW / item.b.width ;
+            item.b.scale.set( item.originalSize *2);
             item.b.reset(x,y);
 
             item.b.exists = false;
             item.b.visible = true;
-            //item.b.alive = true;
 
             item.b.inputEnabled = true;
             item.b.input.enableDrag();
 
 
-            item.b.input.enableSnap(cellW, cellH, false, true, Math.floor(-cellW / 2 -10), Math.floor(-cellH / 2 +10));
+            item.b.input.enableSnap(cellW, cellH, false, true, Math.floor(-cellW / 2 -10), Math.floor(-cellH / 2 -10));
             item.b.events.onDragStop.add(zones.shipCargo.onDragItemStop, zones.shipCargo.sprite);
 
             item.b.events.onDragStart.add(function () {
+                console.log("on drag start")
 
                 arguments[0].parentObject.originZone = zones.data.detectZone(arguments[0]);
                 arguments[0].parentObject.dragStart = {};
@@ -314,7 +313,6 @@ var Interface = {
             {
                 this.addItem( zones.data.installedEquipmentGroup.children[i],i);
             }
-//            zones.data.installedEquipmentGroup = equipmentItemsGroup;
 
             if (zones.visible) {
                 zones.visible = true;
@@ -323,8 +321,6 @@ var Interface = {
             else {
                 zones.visible = false;
                 zones.data.installedEquipmentGroup.visible= false;
-
-
             }
             game.world.bringToTop(zones.data.installedEquipmentGroup);
         };
@@ -344,35 +340,35 @@ var Interface = {
 
         };
         zones.data.InventoryChangeHandler = function () {
-            console.log(arguments);
-            console.log("zones.data.InventoryChangeHandler ");
+
+
             var ship = arguments[0];
 
-            this.shipMenu.shipCargo.populateGrid(ship);
+            this.shipMenu.shipCargo.updateCargoView(ship);
 
             this.shipMenu.shipView.updateShipView(ship);
 
         };
-    //    zones.shipInfo.updateShipView(ship);
+
         zones.shipCargo.onDragItemStop = function (item) {
 
         var ship = item.game.ship;
             if(zones.data.detectZone(item)===null) {
 
-                item.scale.set(item.parentObject.originalSize || 2);
+
+
                 ship.uninstallItem(item.parentObject);
                 ship.dropItem(item.parentObject);
                 this.game.onPlayerInventoryChanged.dispatch(ship);
 
             }
-            if(zones.data.detectZone(item)==='shipInfo') {
+            else if(zones.data.detectZone(item)==='shipInfo') {
 
                 item.x =item.parentObject.dragStart.x;
                 item.y=item.parentObject.dragStart.y;
 
             }
-            if(zones.data.detectZone(item)==='shipView'  && item.parentObject.originZone==='shipCargo') {
-                console.log("installing drag drop from cargo", item);
+            else if(zones.data.detectZone(item)==='shipView'  && item.parentObject.originZone==='shipCargo') {
                 var result = ship.installItem(item.parentObject);
                 if (result)
                 {
@@ -380,7 +376,7 @@ var Interface = {
 
                     ship.cargoItemsGroup.remove(item);
                     ship.installedEquipmentGroup.add(item);
-                    //ship.calcVolumeMass();
+
                     this.game.onPlayerInventoryChanged.dispatch(ship);
 
                 }
@@ -398,10 +394,9 @@ var Interface = {
 
 
             }
-            if(zones.data.detectZone(item)==='shipCargo' && item.parentObject.originZone==='shipView') {
+            else if(zones.data.detectZone(item)==='shipCargo' && item.parentObject.originZone==='shipView') {
 
                 console.log("uninstall", item);
-                //console.log("of ship", ship);
 
                ship.uninstallItem(item.parentObject);
             }
@@ -410,28 +405,24 @@ var Interface = {
         zones.shipCargo.addItem = function (item,i) {
 
             item = item.parentObject;
-            if (item.scale === undefined)
-                item.scale = cellW / item.b.width;
-             item.b.scale.set(item.scale);
+
+
+             item.b.scale.set(item.originalSize *2);
 
              var g =   i % this.cellsX;
              var k = Math.floor(i/this.cellsX);
-
-                // var k = Math.floor( i%this.cellsY);
-
              var x = this.x + zones.data.xPadding + this.grid.cellW * (g+1) - cellW / 2;
             var y = this.y + zones.data.yPadding + this.grid.cellH * (k+1) - cellH / 2;
             item.b.reset(x,y);
 
             item.b.exists = false;
             item.b.visible = true;
-            //item.b.alive = true;
 
             item.b.inputEnabled = true;
             item.b.input.enableDrag();
 
 
-            item.b.input.enableSnap(cellW, cellH, false, true, Math.floor(-cellW / 2 -10), Math.floor(-cellH / 2 +10));
+            item.b.input.enableSnap(cellW, cellH, false, true, Math.floor(-cellW / 2 -10), Math.floor(-cellH / 2 -10));
             item.b.events.onDragStop.add(zones.shipCargo.onDragItemStop, zones.shipCargo.sprite);
             item.b.events.onDragStart.add(function () {
                 arguments[0].parentObject.originZone = zones.data.detectZone(arguments[0]);
@@ -441,11 +432,10 @@ var Interface = {
             });
 
 
-         //  item.b.bringToTop();
 
         };
 
-        zones.shipCargo.populateGrid = function (ship) {
+        zones.shipCargo.updateCargoView = function (ship) {
 
             var cargoItemsGroup = ship.cargoItemsGroup;
 
@@ -534,6 +524,57 @@ var Interface = {
         } ;
 
         return btns;
+    },
+    ShipIconsButtons: function (sizes,parent) {
+        this.game = parent.game;
+        var ship = this.game.ship;
+        var btns = {};
+
+        btns.sizes = sizes || [100,100,100];
+        var w = (this.game.width - btns.sizes[2]+16);
+        var h = (this.game.height)-sizes[2]-16;
+
+        var n = 0; // номер кнопки
+        var f = 3; // фреймов на кнопку
+        var sp = 34; //расстояние между кнопками
+        btns.buttonsGroup = this.game.add.group();
+
+        btns.shipMenuButton = this.game.add.button(w+sp*n,h,'spaceicons',parent.OpenShipMenu,parent,
+            n*f,n*f+1,n*f,n*f,btns.buttonsGroup);
+        btns.shipMenuButton.setCustomDefaults(n*f+2,n*f+1);
+        btns.shipMenuButton.enable(true);
+        n++;
+
+        btns.shipGrab = this.game.add.button(w+sp*n,h,'spaceicons',"",parent,
+            n*f,n*f+1,n*f,n*f,btns.buttonsGroup);
+        btns.shipGrab.setCustomDefaults(n*f+2,n*f+1);
+        btns.shipGrab.enable(false);
+        n++;
+        btns.shipFuel = this.game.add.button(w+sp*n,h,'spaceicons',"",parent,
+            n*f,n*f+1,n*f,n*f,btns.buttonsGroup);
+        btns.shipFuel.setCustomDefaults(n*f+2,n*f+1);
+        btns.shipFuel.enable(false);
+        n++;
+        btns.intercom = this.game.add.button(w+sp*n,h,'spaceicons',"",parent,
+            n*f,n*f+1,n*f,n*f,btns.buttonsGroup);
+        btns.intercom.setCustomDefaults(n*f+2,n*f+1);
+        btns.intercom.enable(false);
+
+
+        btns.hide = function () {
+            btns.buttonsGroup.forEach(function (b) {
+                b.visible = false;
+            })
+
+        } ;
+        btns.show = function () {
+            btns.buttonsGroup.forEach(function (b) {
+                b.visible = true;
+            });
+        } ;
+
+        return btns;
+
     },
     Labels: function (parent) {
         var labels = {};
@@ -718,7 +759,7 @@ var Interface = {
 
         labels.labelMoney.text = "Деньги: " + Math.round(ship.money);
 
-        labels.labelSpeed.text =  "Скорость: " + Math.round(ship.vel)/10 +" km/s";
+        labels.labelSpeed.text =  "Скорость: " + Math.round(ship.vel/2)/10+" km/s";
 
 
         if (ship.isLanded) { labels.status = " на поверхности ";
@@ -860,7 +901,7 @@ var Interface = {
         var worldSize = this.game.worldSize;
         var mMap = {};
         mMap.buttons = this.game.add.group();
-        mMap.UIblock = this.game.add.group();
+        mMap.mMapGroup = this.game.add.group();
         mMap.zoom = 1;
         mMap.alpha = 0.5;
         var minimapSize = size;
@@ -880,12 +921,12 @@ var Interface = {
         mMap.resolution = minimapSize / worldSize *mMap.zoom *16*16;
 
 
-        mMap.UIblock.add(mMap.UIframe);
+        mMap.mMapGroup.add(mMap.UIframe);
 
         mMap.unitDots = this.game.add.graphics(0, 0);
         mMap.unitDots.fixedToCamera = true;
 
-        mMap.UIblock.add(mMap.unitDots);
+        mMap.mMapGroup.add(mMap.unitDots);
 
         mMap.localX = mMap.UIframe.width;
         mMap.localY = this.game.camera.view.height - mMap.UIframe.height;
@@ -936,7 +977,7 @@ var Interface = {
 
             set: function(value) {
 
-                this.UIblock.visible = value;
+                this.mMapGroup.visible = value;
                 this.buttons.visible = value;
                 this._enabled = value;
 
@@ -1015,7 +1056,7 @@ var Interface = {
 
         }
 
-        miniMap.UIblock.sendToBack(miniMap.UIframe);
+        miniMap.mMapGroup.sendToBack(miniMap.UIframe);
 
     }
 

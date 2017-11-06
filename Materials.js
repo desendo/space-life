@@ -1,19 +1,6 @@
 var Materials = Materials || {};
 Materials.Asteroids = {};
-Materials =
-    {
-      asteroid1: {
-              name: "asteroid1",
-              typeName: PickableObjectTypes.material,
-              title: "камень",
-              sprite: "rock",
-              density: 12,
-              descr: "часть обычного на вид астероида, может содержать полезные ископаемые " +
-              "в том числе и очень редкие. для подробной информации необходимо произвести" +
-              " исследование этого типа астероидов",
 
-          }
-    };
 Materials.Elements=
     {
         Al:{},
@@ -29,7 +16,7 @@ Materials.Asteroids.Minerals =
                 name: "c-type",
                 rarity: 0.75,
                 typeName: PickableObjectTypes.material,
-                title: "темный камень",
+                title: "темный пеористый камень",
                 sprite: "rock",
                 tint:"0xAAAAAA",
                 density: 1.2,
@@ -69,7 +56,7 @@ Materials.Asteroids.Minerals =
                 name: "S-type",
                 rarity: 0.08,
                 typeName: PickableObjectTypes.material,
-                title: "j,s камень",
+                title: "серый камень",
                 tint:"0xFFFFFF",
                 sprite: "rock",
                 density: 5.2,

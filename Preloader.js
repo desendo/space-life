@@ -16,12 +16,16 @@
     SpaceLifeGame.Preloader.prototype = {
 
         startNewGame: function () {
-
+            this.game.isLoading = false;
             this.state.start('MainState');
         },
         continueGame: function () {
-            this.game.continue = true;
-            this.state.start('MainState');
+            if(localStorage.getItem('save-quicksave') !== null)
+            {
+                this.game.isLoading = true;
+                this.game.saveGameKey = 'save-quicksave';
+                this.state.start('MainState');
+            }
 
         },
         MainMenu: function (game) {
@@ -59,7 +63,7 @@
             this.newgame.fixedToCamera = true;
 
             if(JSON.parse(localStorage.getItem("savegame"))!==null || true) {
-                this.continuegame = game.add.button(cx, cy + hs + 10, 'menubuttons', this.continueGame, this, 1, 0, 1, 0);
+                this.continuegame = game.add.button(cx, cy + hs + 10, 'menubuttons', this.continueGame, this, 1, 0, 1, 1);
                 this.continuegame.events.onInputOut.add(function () {
                     arguments[0].children[0].fill = "#ffffff";
                 }, this);
@@ -103,7 +107,7 @@
             this.load.spritesheet('asteroids1',assets+'asteroids1.png',32,32,8,0,0);
             this.load.spritesheet('glow',assets+'glow.png',32,32,4,0,0);
             this.load.spritesheet('buttons',assets+'buttons.png',75,25,9);
-            this.load.spritesheet('spaceicons',assets+'spaceicons.png',16,16,5);
+            this.load.spritesheet('spaceicons',assets+'space.png',16,16);
 
 
             this.load.image('planet',assets+'sprite_planet.png');
