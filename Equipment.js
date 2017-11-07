@@ -228,8 +228,8 @@ Equipment.PowerPlants = {
             title: "реактор типа TWR-330",
             sprite: "generators",
             frame: 0,
-            mass: 40,
-            volume: 50,
+            mass: 20,
+            volume: 30,
             output: 5,
             price: 70,
             typeName: PickableObjectTypes.equipment,
@@ -244,8 +244,8 @@ Equipment.EnergyStorages = {
             title: "энергобанк на базе нанопленочных конденсаторов",
             sprite: "capacitors",
             frame: 0,
-            volume: 30,
-            mass: 40,
+            volume: 20,
+            mass: 5,
             capacity: 220,
             typeName: PickableObjectTypes.equipment,
             type: Equipment.Types.capacitor
@@ -261,7 +261,7 @@ Equipment.Grabbers = {
             frame: 0,
             radius: 100,
             volume:10,
-            mass:40,
+            mass:15,
             typeName: PickableObjectTypes.equipment,
             type: Equipment.Types.grabber
 
@@ -278,7 +278,7 @@ Equipment.Radars = {
             frame: 0,
             radius: 12000,
             volume:10,
-            mass:40,
+            mass:30,
             typeName: PickableObjectTypes.equipment,
             type: Equipment.Types.radar
 

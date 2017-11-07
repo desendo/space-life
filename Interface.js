@@ -23,12 +23,17 @@ var Interface = {
         },this);
 
         this.game.onPlayerLanded.add(this.landedHandler,this);
+        this.game.onEscPressed.add(this.escHandler,this);
 
         return this;
     },
     landedHandler: function () {
       //  console.log(arguments);
 
+    },
+    escHandler : function () {
+        if(this.shipMenu.visible)
+            this.OpenShipMenu();
     },
     updateIndicators: function (params) {
 
@@ -82,6 +87,7 @@ var Interface = {
             }
         };
         mouseTooltip.outOfItem = function () {
+
             this.game.time.events.removeAll();
             mouseTooltip.tip.fixedToCamera = false;
             mouseTooltip.back.fixedToCamera = false;
@@ -682,7 +688,7 @@ var Interface = {
         {this.c++;
             if(this.c>5) {
                 for (label in this.labels) {
-                    this.labels[label].text = "";
+                    this.labels[label].text = " ";
                 }
                 this.resetFontBug = false;
             }
@@ -692,10 +698,10 @@ var Interface = {
 
         if (ship.fuel < 0) ship.fuel = 0;
 
-        labels.labelFuel.text = "Топливо: "+ Math.round(ship.fuel*100)/100;
-        labels.labelAcc.text = "Ускорение: "+ ship.acc.toFixed(2)+"g";
-        labels.labelMass.text = "Масса: "+ ship.mass+"t";
-        labels.labelCargo.text = "Грузовой отсек: "+ ship.cargoBay+"/"+ship.cargoBayCap;
+        labels.labelFuel.text = T[lang].fuel+ ": "+ Math.round(ship.fuel*100)/100;
+        labels.labelAcc.text = T[lang].acceleation+ ": "+ ship.acc.toFixed(2)+"g";
+        labels.labelMass.text = T[lang].mass+ ": "+ ship.mass+"t";
+        labels.labelCargo.text = T[lang].cargobay+ ": "+ ship.cargoBay+"/"+ship.cargoBayCap;
 
         // labels.labelDamping.text = (ship.b.body.damping==0 || ship.vel<1) ? "" : "аэродин.торм.: "+ ship.b.body.damping.toFixed(1) ;
         // labels.labelDamping.style.backgroundColor = "#ff9300";
@@ -713,7 +719,7 @@ var Interface = {
                 string +=" ";
         }
         string = "["+string+"]";
-        labels.labelThrustLevel.text = "тяга: (Z)"+ string +"(X)";
+        labels.labelThrustLevel.text = T[lang].thrust+": (Z)"+ string +"(X)";
         labels.labelThrustLevel.inputEnabled = true;
         labels.labelThrustLevel.events.onInputOut.add(function () {
             game.wheelDelta.valueToChange = null;
@@ -736,7 +742,7 @@ var Interface = {
                 string +=" ";
         }
         string = "["+string+"]";
-        labels.labelThrustDumpLevel.text = "уров (C)"+ string +"(V)";
+        labels.labelThrustDumpLevel.text = T[lang].lvl+" (C)"+ string +"(V)";
         labels.labelThrustDumpLevel.inputEnabled = true;
         labels.labelThrustDumpLevel.events.onInputOut.add(function () {
             game.wheelDelta.valueToChange = null;
@@ -748,7 +754,7 @@ var Interface = {
         });
         labels.labelCustomStatus.text = ship.globalStatus ||"";
 
-        labels.labelFlightMode.text = ship.isFreeFlight ? "свободный полет (F)" : " автокомп."+ship.thrustCurrentDamp+"/"+ship.thrustMaximum+"  (F) ";
+        labels.labelFlightMode.text = ship.isFreeFlight ? T[lang].freeflight+" (F)" : T[lang].autocompensation+""+ship.thrustCurrentDamp+"/"+ship.thrustMaximum+"  (F) ";
         labels.labelFlightMode.style.backgroundColor = ship.isFreeFlight ? "transparent" : "#ff9300";
         labels.labelFlightMode.style.fill = ship.isFreeFlight ? "white" : "black";
 
@@ -757,9 +763,9 @@ var Interface = {
         labels.labelFlightStatus.style.backgroundColor = customBack;
         labels.labelFlightStatus.style.fill = customFill;
 
-        labels.labelMoney.text = "Деньги: " + Math.round(ship.money);
+        labels.labelMoney.text = T[lang].money+": " + Math.round(ship.money);
 
-        labels.labelSpeed.text =  "Скорость: " + Math.round(ship.vel/2)/10+" km/s";
+        labels.labelSpeed.text =  T[lang].speed+": " + Math.round(ship.vel/2)/10+" km/s";
 
 
         if (ship.isLanded) { labels.status = " на поверхности ";
@@ -780,7 +786,7 @@ var Interface = {
             this.UpdateUnitDots(this.game);
 
 
-            labels.labelDate.text = "Дата: " + Math.floor(this.game.day / 360) + "." + (Math.floor((this.game.day % 360) / 30) + 1) + "." + ((this.game.day % 360) % 30 + 1);
+            labels.labelDate.text = T[lang].date+": " + Math.floor(this.game.day / 360) + "." + (Math.floor((this.game.day % 360) / 30) + 1) + "." + ((this.game.day % 360) % 30 + 1);
 
             this.game.counter = 0;
         }
