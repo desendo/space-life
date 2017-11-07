@@ -11,8 +11,19 @@ function EventManager (game)
     this.game.onPlayerUnlanded = new  Phaser.Signal();
 
     this.game.onCargoFull = new  Phaser.Signal();
+
+    this.game.onGeneratorEnabled = new  Phaser.Signal();
+    this.game.onGeneratorDisabled = new  Phaser.Signal();
+
+    this.game.onCapacitorEnabled = new  Phaser.Signal();
+    this.game.onCapacitorDisabled = new  Phaser.Signal();
+
+    this.game.onRadarEnabled = new  Phaser.Signal();
+    this.game.onRadarDisabled = new  Phaser.Signal();
+
     this.game.onQuickSave = new  Phaser.Signal();
     this.game.onQuickLoad = new  Phaser.Signal();
+    this.game.onEscPressed = new  Phaser.Signal();
 
 }
 

@@ -11,14 +11,19 @@ Phaser.Game.prototype.saveGame = function(key) {
 
 Phaser.Game.prototype.loadGame = function(key) {
     if (key === undefined) key = 'quicksave';
-    var state = localStorage.getItem('save-'+key);
-    if (state) {
-       state = JSON.parse(state);
-    }
 
-    this.isLoading = true;
-    this.saveGameKey = 'save-'+key;
-    this.state.start('MainState',true, false );
+    if(localStorage.getItem('save-'+key)!== undefined && localStorage.getItem('save-'+key)!== null) {
+        var state = localStorage.getItem('save-' + key);
+        if (state) {
+            state = JSON.parse(state);
+        }
+
+        this.isLoading = true;
+        this.saveGameKey = 'save-' + key;
+        this.state.start('MainState', true, false);
+    }
+    else
+        sendNotification("ошибка загрузки",{body:"Отсутствует сохранение "+key+" в localStorage"});
 
 };
 

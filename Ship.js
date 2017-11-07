@@ -698,24 +698,38 @@ Ship.prototype.calcEquipmentDependedParams = function () {
 
     if(this.eq.radar) {
 
-        if( this instanceof Player)
-            this.game.userInterface.miniMap.enabled=true;
+
+            this.game.userInterface.miniMap.enabled = true;
+            this.game.onRadarEnabled.dispatch(this);
+
     }
     else
     {
-        if( this instanceof Player) {
+
             this.game.userInterface.miniMap.enabled = false;
-        }
+            this.game.onRadarDisabled.dispatch(this);
+
     }
 
-    if(this.eq.power) {
-        console.log("enabling power");
+    if(this.eq.generator) {
+        console.log("enabling generator");
 
-        console.log("power enabled");
+        this.game.onGeneratorEnabled.dispatch(this);
+
+        console.log("generator enabled");
     }
     else
     {
-        //this.game.userInterface.miniMap.enabled=false;
+        this.game.onGeneratorDisabled.dispatch(this);
+    }
+    if(this.eq.capacitor) {
+        console.log("enabling capacitor");
+        this.game.onCapacitorEnabled.dispatch(this);
+        console.log("capacitor enabled");
+    }
+    else
+    {
+        this.game.onCapacitorDisabled.dispatch(this);
     }
 
 
@@ -794,11 +808,12 @@ function Player(data, game) {
     this.createPickableObjects();
     this.InitShipMenu();
 
-    this.game.onPlayerInventoryChanged.add(this.calcVolumeMass,this);
+    this.game.onPlayerInventoryChanged.add(this.calcVolumeAndMass,this);
 
     this.b.body.collides(this.game.spaceBodiesColGroup, this.colCallback, this);
     this.pressedQL = false;
     this.pressedQS = false;
+    this.pressedESC = false;
 
 };
 Player.prototype = Object.create(Ship.prototype);
@@ -848,7 +863,7 @@ Player.prototype.createPickableObjects = function () {
     this.game.userInterface.shipMenu.shipView.updateShipView(this);
 
 
-    this.calcVolumeMass();
+    this.calcVolumeAndMass();
 
 
 };
@@ -903,6 +918,9 @@ Player.prototype.readKeys = function () {
 
     if (game.usrKeys.quickLoad.isDown && !this.pressedQL) game.onQuickLoad.dispatch();
     this.pressedQL = game.usrKeys.quickLoad.isDown;
+
+    if (game.usrKeys.systemEsc.isDown && !this.pressedESC) game.onEscPressed.dispatch();
+    this.pressedESC = game.usrKeys.quickLoad.isDown;
 
     if(!this.isDead) {
         if (game.usrKeys.quickSave.isDown && !this.pressedQS) game.onQuickSave.dispatch();
@@ -1007,21 +1025,21 @@ Player.prototype.Land = function (planet = null) {
     // this.b.visible  = true;
 
     this.planetLanded = planet;
-    this.game.onPlayerLanded.dispatch(this.planetLanded );
+    this.game.onPlayerLanded.dispatch(this.planetLanded,true );
     this.isStarting = false;
     this.vel = 0;
     this.oldVel = 0;
 
 };
 Player.prototype.unLand = function () {
-
-    this.game.onPlayerUnlanded.dispatch(this.planetLanded);
+    this.game.onPlayerLanded.active = false;
+    this.game.onPlayerUnlanded.dispatch(this.planetLanded,false);
     this.isStarting = true;
 
 
     this.game.time.events.add(1000, function () {
+        this.game.onPlayerLanded.active = true;
         this.isStarting = false;
-
     },this,this);
 
     this.b.exists = true;
@@ -1075,7 +1093,7 @@ Player.prototype.updateRelationsToPlanets = function () {
                 // planet.deltaCross = (oldcross.toFixed(4) - cross.toFixed(4));
                 // this.deltaCross =planet.deltaCross;
 
-                this.globalStatus = "В гравитационном поле планеты " + planet.name;
+                this.globalStatus =  T[lang].inagravityofplanet+" " + planet.name;
 
                 // var q = (d +500*planet.b.width) /(planet.size*planet.size *100000);
                 var q = (d +2500*planet.b.width) /(planet.size*planet.size *700000);
@@ -1088,7 +1106,7 @@ Player.prototype.updateRelationsToPlanets = function () {
 
 
                 if(d <planet.atmRadiusSquared/2) {
-                    this.globalStatus = "В атмосфере планеты " + planet.name;
+                    this.globalStatus =  T[lang].inatmosphereofplanet +" "+ planet.name;
 
                     if (this.standingStillCounter ===undefined) this.standingStillCounter=0;
 
@@ -1110,7 +1128,7 @@ Player.prototype.updateRelationsToPlanets = function () {
 
 
 
-                        this.globalStatus = "На поверхности планеты " + this.planetLanded.name;
+                        this.globalStatus = T[lang].onsurfaceofplanet+ " "+this.planetLanded.name;
 
                         this.b.exists= false;
                         this.b.visible= true;
@@ -1163,7 +1181,7 @@ Player.prototype.updateRelationsToPlanets = function () {
     this.b.body.force.y = this.planetsTotalGravity.y;
 
 };
-Player.prototype.calcVolumeMass = function () {
+Player.prototype.calcVolumeAndMass = function () {
 
     var mass = this.eq.hull.mass;
     var volume = 0;
@@ -1265,7 +1283,7 @@ Player.prototype.dropItem = function (item) {
         item.b.sendToBack();
         item.b.input.disableDrag();
 
-        this.calcVolumeMass();
+        this.calcVolumeAndMass();
         this.calcEquipmentDependedParams();
        // this.game.onPlayerInventoryChanged.dispatch(this);
 
@@ -1364,7 +1382,7 @@ Player.prototype.uninstallItem = function (item) {
 
         this.installedEquipmentGroup.remove(item.b);
         this.cargoItemsGroup.add(item.b);
-        this.calcVolumeMass();
+        this.calcVolumeAndMass();
         this.calcEquipmentDependedParams();
 
 
@@ -1409,7 +1427,7 @@ Player.prototype.sellItem = function (items,price) {
                 this.installedEquipmentGroup.remove(items);
             }
         this.money+=price;
-        this.calcVolumeMass();
+        this.calcVolumeAndMass();
 
     };
 Player.prototype.InitShipMenu = function () {
@@ -1443,7 +1461,7 @@ Player.prototype.createGrabber  = function () {
             grabHL.visible = false;
             return grabHL;
         }
-        else console.log("no grabber installd/ init highlight failed");
+        else console.log("no grabber installed. init highlight failed");
 
     };
 Player.prototype.updateItemsToGrab = function (){
@@ -1506,6 +1524,7 @@ Player.prototype.fillFuel = function () {
         }
     };
 Player.prototype.readKeyboardInput = function () {
+
 if(this.game.input.enabled && !this.isDead) {
     if (this.game.usrKeys.switchFreeFlight.isDown && !this.pressedSwitchFreeflight) {
         this.isFreeFlight = !this.isFreeFlight;
