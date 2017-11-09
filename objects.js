@@ -167,6 +167,8 @@ Planet.prototype.init = function (x,y,size,sprite,gravityRadius,name="Земля
     this.game = game;
     this.oldDirToShip = new Phaser.Point(0,0);
 
+    this.orbitGroup = this.game.add.group(this.game.spaceObjectsLayer,"orbit of"+this.name);
+
 
 
     this.size = size;
@@ -177,12 +179,12 @@ Planet.prototype.init = function (x,y,size,sprite,gravityRadius,name="Земля
     var atmRadius = image.width*size;
 
     this.b = this.game.add.sprite(this.x,this.y,this.sprite);
-    this.game.spaceObjectsLayer.add(this.b);
+    this.orbitGroup.add(this.b);
     this.gr = this.game.add.graphics(0,0);
     this.gr.beginFill('0xFFFFFF',0.05);
     this.gr.drawCircle(this.x,this.y ,this.gravityRadius*2);
     this.gr.endFill();
-    this.game.spaceObjectsLayer.add(this.gr);
+    this.orbitGroup.add(this.gr);
 
     this.gravRadSquared = (gravityRadius)*(gravityRadius);
 
@@ -213,11 +215,43 @@ Planet.prototype.init = function (x,y,size,sprite,gravityRadius,name="Земля
 
     this.labelPos.x = 0;
     this.labelPos.y = -this.size;
-    this.atm = this.createAtmosphere();
-    this.game.spaceObjectsLayer.add(this.atm);
+    this.atm = game.add.sprite(this.x,this.y,this.createAtmosphere());
+    this.atm.anchor.set(0.5);
+
+    this.orbitGroup.add(this.atm);
     this.atmRadiusSquared = this.atmRadius*this.atmRadius;
     // this.spr = this.game.add.sprite(this.x,this.y,this.generateSprite());
     // this.spr.anchor.set(0.5);
+    this.bmd = game.add.bitmapData(96,96);
+
+
+
+    var wb = this.b.width/this.size;
+
+    this.bmd.draw(this.b,wb/2*3,wb/2*3,3,3);
+
+    this.bmd.draw(this.atm,wb/2*3,wb/2*3,3*wb,3*wb);
+
+
+    //this.bmd.update();
+
+     this.bmd.update();
+    //
+     this.spr = game.add.sprite(75,this.game.camera.height-75,this.bmd);
+     this.spr.anchor.set(0.5);
+     this.spr.smoothed =false;
+     this.spr.fixedToCamera = true;
+     this.spr.visible = false;
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -248,11 +282,13 @@ Planet.prototype.createAtmosphere = function (atmRadius) {
     var color = "0x"+"#9499fe".slice(1, 7);
     atm.beginFill(color,0.08);
     var k = 1.4;
-    atm.drawCircle(this.x,this.y,atmRadius*k  );
-    atm.drawCircle(this.x,this.y,atmRadius*k*0.9  );
-    atm.drawCircle(this.x,this.y,atmRadius*k*0.8  );
-    atm.drawCircle(this.x,this.y,atmRadius*k*0.7  );
+    atm.drawCircle(0,0,atmRadius*k  );
+    atm.drawCircle(0,0,atmRadius*k*0.9  );
+    atm.drawCircle(0,0,atmRadius*k*0.8  );
+    atm.drawCircle(0,0,atmRadius*k*0.7  );
     atm.endFill();
+    atm = atm.generateTexture();
+
     return atm;
 };
 Planet.prototype.update = function () {
@@ -264,10 +300,11 @@ Planet.prototype.update = function () {
       go = this.game.spaceObjects[i];
       if(go.objType!==ObjTypes.planet) {
           d = (go.b.x - this.b.x) * (go.b.x - this.b.x) + (go.b.y - this.b.y) * (go.b.y - this.b.y);
-          if (go !== null && go.objType === ObjTypes.asteroid && d < this.gravRadSquared) {
+          if (go !== null && (go.objType === ObjTypes.asteroid|| go.objType === ObjTypes.player)&& d < this.gravRadSquared) {
               go.dirToObj = new Phaser.Point(go.b.x - this.b.x, go.b.y - this.b.y);
               go.dirToObj.normalize();
-              var q = (d + 2500 * this.b.width) / (this.size * this.size * 100000);
+            //  var q = (d + 2500 * this.b.width) / (this.size * this.size * 100000);
+              var q = (d +2500*this.b.width) /(this.size*this.size *700000);
 
               go.b.body.force.x = -go.dirToObj.x / ( q) * go.b.body.mass;
               go.b.body.force.y = -go.dirToObj.y / (q) * go.b.body.mass;
@@ -328,8 +365,7 @@ Planet.prototype.contactHandler = function () {
         var game = arguments[0].parentObject.game;
         var cx = game.physics.p2.mpxi(pos[0] + pt[0]);
         var cy = game.physics.p2.mpxi(pos[1] + pt[1]);
-        console.log(cx,cy);
-        console.log(pt);
+
 
     }
 };

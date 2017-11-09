@@ -3,11 +3,11 @@
  */
 ;
 
-(function(SpaceLifeGame) {
-    SpaceLifeGame.MainState = function (game) {};
+(function(TheGame) {
+    TheGame.MainState = function (game) {};
     var game;
 
-SpaceLifeGame.MainState.prototype = {
+TheGame.MainState.prototype = {
 
     preload: function() {
 
@@ -156,7 +156,6 @@ function gameObjectsUpdate(spaceObjects){
             spaceObjects[i].update();
     }
 }
-
 function createEmmiters(game) {
 
     game.damageEmiter = game.add.emitter(0,0,30);
@@ -170,8 +169,12 @@ function createEmmiters(game) {
     game.explosionEmiter = game.add.emitter(0,0,600);
     game.explosionEmiter.makeParticles('part');
     game.explosionEmiter.gravity = 0;
+    game.explosionEmiter.minParticleSpeed.x = -70;
+    game.explosionEmiter.minParticleSpeed.y = -70;
+    game.explosionEmiter.maxParticleSpeed.x = 70;
+    game.explosionEmiter.maxParticleSpeed.y = 70;
 
-    game.explosionEmiter.setAlpha(1, 0.5, 1500, Phaser.Easing.Linear.None,false);
+    game.explosionEmiter.setAlpha(1, 0, 1500, Phaser.Easing.Quadratic.Out,false);
     game.explosionEmiter.forEach(function(p) {p.tint ='0xffc200';},this);
 
     game.landEmiter = game.add.emitter(0,0,30);
@@ -181,7 +184,6 @@ function createEmmiters(game) {
     game.landEmiter.forEach(function(p) {p.tint ='0xffc200';},this);
 
 }
-
 function optimizeRendering(spaceObjects) {
         if(this.x20counter===0) {
             this.x20counter = this.x20;
@@ -342,6 +344,33 @@ function generateWorld(){
             sprite: "planet"
         }
     ],
+    ships:[
+        {
+            x: -1000,
+            y: -1000-32*18/2-521,
+            fuel:20,
+            rotation:180,
+
+            eq : {
+                hull: Equipment.Hulls.Ship0,
+                weapon: Equipment.Weapons.Laser1,
+                radar: Equipment.Radars.Radar1,
+                engine: Equipment.Engines.RD300,
+            }
+        },
+        {
+            x: -1300,
+            y: -1000-32*18/2-821,
+            rotation:-180,
+            fuel:20,
+            eq : {
+                hull: Equipment.Hulls.Ship0,
+                weapon: Equipment.Weapons.Laser1,
+                radar: Equipment.Radars.Radar1,
+                engine: Equipment.Engines.RD300,
+            }
+        }
+    ],
     asteroids:[]
 
 };
@@ -400,5 +429,4 @@ function mouseWheel(event) {
 
 
     };
-
 })(SpaceLifeGame);

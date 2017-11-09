@@ -33,6 +33,7 @@ Phaser.Game.prototype.getSaveData = function () {
     saveObj.planets = [];
     saveObj.asteroids = [];
     saveObj.items = [];
+    saveObj.ships = [];
     for (var i = 0; i< this.spaceObjects.length;i++)
     {
         if(this.spaceObjects[i].objType === ObjTypes.player)
@@ -46,6 +47,11 @@ Phaser.Game.prototype.getSaveData = function () {
         else if(this.spaceObjects[i].objType === ObjTypes.asteroid)
         {
             saveObj.asteroids.push(this.spaceObjects[i].getSaveData());
+        }
+        else if(this.spaceObjects[i].objType === ObjTypes.ship)
+        {
+            saveObj.asteroids.push(this.spaceObjects[i].getSaveData());
+
         }
         else
             console.log(this.spaceObjects[i]);
@@ -68,6 +74,10 @@ function Load(game,json) {
     data.asteroids.forEach(function (a) {
 
         var asteroid = new Asteroid(a, game);
+    });
+    data.ships.forEach(function (a) {
+
+        var ship = new NPC(a, game);
     });
 
     game.ship = new Player(data.player, game);

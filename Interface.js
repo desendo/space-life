@@ -6,13 +6,17 @@ var Interface = {
 
         this.sizes = sizes;
         this.status = '';
+
         this.miniMap = new Interface.MiniMap(sizes[0],this);
+        this.miniPlanet = new Interface.MiniPlanet(sizes[0],this);
+
         this.pilot = new Interface.Pilot('grahem',this);
         this.labels = new Interface.Labels(this);
 
         this.shipInterface = new Interface.ShipIconsButtons(sizes,this);
         this.shipMenu = new Interface.ShipMenu(this);
         this.mouseTooltip = new Interface.MouseTooltip(this);
+
 
         this.game.onPlayerDamage.add(this.updateIndicators,this);
         this.game.onPlayerInventoryChanged.add(this.shipMenu.data.InventoryChangeHandler,this);
@@ -23,12 +27,26 @@ var Interface = {
         },this);
 
         this.game.onPlayerLanded.add(this.landedHandler,this);
+        this.game.onPlayerUnlanded.add(this.unlandedHandler,this);
         this.game.onEscPressed.add(this.escHandler,this);
 
         return this;
     },
+    unlandedHandler: function () {
+        this.miniMap.visible = true;
+
+        this.miniPlanet.hide();
+
+    },
     landedHandler: function () {
-      //  console.log(arguments);
+        var isLanding = arguments[1];
+
+
+            this.miniMap.visible = false;
+
+            this.miniPlanet.show(arguments[0]);
+
+
 
     },
     escHandler : function () {
@@ -107,7 +125,6 @@ var Interface = {
         mouseTooltip.back.visible = false;
         return mouseTooltip
     },
-
     ShipMenu : function (parent) {
         this.game = parent.game;
         var game = this.game;
@@ -649,10 +666,10 @@ var Interface = {
             y: labels.game.camera.height-150-14-10,
             maxHP:150,
             bg: {
-                color: '#292536'
+                color: '#36080c'
             },
             bar: {
-                color: '#3c66bc'
+                color: '#bc0209'
             },
             animationDuration: 200,
             flipped: false
@@ -902,6 +919,7 @@ var Interface = {
         };
         return pilot;
     },
+
     MiniMap : function (size,parent) {
         this.game = parent.game;
         var worldSize = this.game.worldSize;
@@ -937,7 +955,7 @@ var Interface = {
         mMap.localX = mMap.UIframe.width;
         mMap.localY = this.game.camera.view.height - mMap.UIframe.height;
         mMap.UIframe.y = mMap.localY;
-        mMap.UIframe.fixedToCamera = mMap;
+        mMap.UIframe.fixedToCamera = true;
 
 
 
@@ -975,6 +993,7 @@ var Interface = {
         mMap.buttons.add(mMap.labelZoom);
         mMap.buttons.fixedToCamera=true;
         mMap._enabled = false;
+        mMap._visible = true;
         Object.defineProperty(mMap, "enabled", {
 
             get: function() {
@@ -983,12 +1002,27 @@ var Interface = {
 
             set: function(value) {
 
-                this.mMapGroup.visible = value;
-                this.buttons.visible = value;
+                this.mMapGroup.visible = value && this.visible;
+                this.buttons.visible = value && this.visible;
                 this._enabled = value;
 
             }
         });
+        Object.defineProperty(mMap, "visible", {
+
+            get: function() {
+                return this._visible;
+            },
+
+            set: function(value) {
+
+                this.mMapGroup.visible = value && this.enabled;
+                this.buttons.visible = value && this.enabled;
+                this._visible = value;
+
+            }
+        });
+
         mMap.hide = function () {
 
             mMap.enabled = false;
@@ -1001,6 +1035,58 @@ var Interface = {
         mMap.enabled = false;
         return mMap;
     },
+    MiniPlanet: function (size,parent) {
+        var mPlanet={};
+
+        var game = parent.game;
+        mPlanet.alpha = 0.5;
+
+
+        mPlanet.localX = size;
+        mPlanet.localY = game.camera.view.height - size;
+
+        mPlanet.UIframe = game.add.graphics(0, mPlanet.localY );
+        mPlanet.UIframe.lineStyle(1, interfaceColor1, mPlanet.alpha);
+        mPlanet.UIframe.beginFill('0x000000', mPlanet.alpha);
+        //this.UIframe.beginFill(interfaceColor2, 1);
+        mPlanet.UIframe.drawRect(0, 0, size, size);
+        mPlanet.UIframe.endFill();
+        mPlanet.UIframe.fixedToCamera = true;
+        mPlanet.mPlanetGroup = game.add.group();
+
+
+
+
+        console.log(mPlanet.localY);
+        mPlanet.UIframe.y = mPlanet.localY;
+        mPlanet.mPlanetGroup.add(mPlanet.UIframe);
+        Object.defineProperty(mPlanet, "visible", {
+
+            get: function() {
+                return this._visible;
+            },
+
+            set: function(value) {
+
+                this.mPlanetGroup.visible = value;
+                this._visible = value;
+
+            }
+        });
+        mPlanet.visible = true;
+        mPlanet.show = function (planet) {
+
+
+            mPlanet.visible = true;
+
+        };
+        mPlanet.hide = function () {
+
+            mPlanet.visible = false;
+        };
+        return mPlanet;
+    },
+
     UpdateUnitDots : function (game) {
 
         this.game = game;
@@ -1009,7 +1095,7 @@ var Interface = {
         var  miniMap = this.miniMap;
         miniMap.unitDots.clear();
 
-        if(miniMap.enabled && ship.eq.radar.radius!==undefined && ship.eq.radar.radius>0) {
+        if(miniMap.enabled &&  miniMap.visible && ship.eq.radar.radius!==undefined && ship.eq.radar.radius>0) {
             for(var i = 0,j=this.game.spaceObjects.length;i<j;i++)
             {
                 var object =this.game.spaceObjects[i];
@@ -1067,4 +1153,3 @@ var Interface = {
     }
 
 };
-
