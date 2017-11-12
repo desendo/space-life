@@ -23,14 +23,15 @@ Materials.Asteroids.Minerals =
                 descr: "часть обычного на вид астероида, может содержать полезные ископаемые " +
                 "в том числе и очень редкие. для подробной информации необходимо произвести" +
                 " исследование этого типа астероидов",
-                contains1:{
-                    material:Materials.Elements.Fe,
-                    part: 0.10
-                },
-                contains2:{
-                    material:Materials.Elements.C,
-                    part: 0.50
-                },
+                contains:[
+                    {
+                        material:Materials.Elements.Fe,
+                        part: 0.10
+                    },
+                    {
+                        material:Materials.Elements.C,
+                        part: 0.50
+                    }]
             },
         typeM: {
                 name: "M-type",
@@ -43,14 +44,14 @@ Materials.Asteroids.Minerals =
                 descr: "часть обычного на вид астероида, может содержать полезные ископаемые " +
                 "в том числе и очень редкие. для подробной информации необходимо произвести" +
                 " исследование этого типа астероидов",
-                contains1:{
+                contains:[{
                     material:Materials.Elements.Fe,
                     part: 0.40
                 },
-                contains2:{
+                {
                     material:Materials.Elements.Ni,
                     part: 0.20
-                }
+                }]
             },
         typeS: {
                 name: "S-type",
@@ -63,18 +64,33 @@ Materials.Asteroids.Minerals =
                 descr: "часть обычного на вид астероида, может содержать полезные ископаемые " +
                 "в том числе и очень редкие. для подробной информации необходимо произвести" +
                 " исследование этого типа астероидов",
-                contains1:{
+                contains:[{
                     material:Materials.Elements.Fe,
                     part: 0.40
                 },
-                contains2:{
+                {
                     material:Materials.Elements.Ni,
                     part: 0.40
-                }
+                }]
             }
     };
 Materials.Junks=
     {
+        ship: {
+            name: "ship junk",
+            rarity: 1,
+            typeName: PickableObjectTypes.material,
+            title: "обломки корабля",
+            sprite: "rock",
+            tint:"0x394250",
+            density: 1.2,
+            descr: " куски корабля оставшиеся после после взрыва",
+            contains:[{
+                material:Materials.Elements.Fe,
+                part: 0.80
+            }]
+
+        }
 
     };
 var Item =

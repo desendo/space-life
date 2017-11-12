@@ -3,7 +3,7 @@
 
 (function(Phaser) {
     console.log(window.innerHeight);
-    var game = new Phaser.Game(1000, window.innerHeight-4 , Phaser.AUTO, 'game');
+    var game = new Phaser.Game(1000, window.innerHeight-4 , Phaser.WEBGL, 'game');
     //var game = new Phaser.Game(window.innerWidth-100 , window.innerHeight-30 , Phaser.AUTO, 'game');
 
 

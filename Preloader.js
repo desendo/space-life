@@ -117,23 +117,41 @@
             this.newgame.addChild(this.newgameLabel);
             this.newgame.fixedToCamera = true;
 
-            if(JSON.parse(localStorage.getItem("savegame"))!==null || true) {
-                this.continuegame = game.add.button(centerx, centery + hs + 10 + shift, 'menubuttons', this.continueGame, this, 1, 0, 1, 1);
+            if(JSON.parse(localStorage.getItem("save-quicksave"))!==null ) {
+            this.continuegame = game.add.button(centerx, centery + hs + 10 + shift, 'menubuttons', this.continueGame, this, 1, 0, 1, 1);
+
+
                 this.continuegame.events.onInputOut.add(function () {
                     arguments[0].children[0].fill = "#ffffff";
                 }, this);
                 this.continuegame.events.onInputOver.add(function () {
                     arguments[0].children[0].fill = "#000000";
                 });
-                this.continuegame.anchor.set(0.5);
 
-
-                this.continuegameLabel = game.add.text(0, 0, T[lang].continuegame, menu);
-                this.continuegameLabel.anchor.set(0.5);
-                this.continuegameLabel.fixedToCamera = true;
-                this.continuegame.addChild(this.continuegameLabel);
-                this.continuegame.fixedToCamera = true;
             }
+            else
+            {
+                this.continuegame = game.add.button(centerx, centery + hs + 10 + shift, 'menubuttons', this.continueGame, this, 0, 0, 0, 0);
+            }
+            this.continuegame.anchor.set(0.5);
+
+
+            this.continuegameLabel = game.add.text(0, 0, T[lang].continuegame, menu);
+            if(JSON.parse(localStorage.getItem("save-quicksave"))===null || JSON.parse(localStorage.getItem("save-quicksave"))===undefined) {
+                this.continuegameLabel.style.fill = "#5b5b5b";
+                this.continuegameLabel.text += " ";
+                this.continuegameLabel.text = this.continuegameLabel.text.trim();
+            }
+            this.continuegameLabel.anchor.set(0.5);
+            this.continuegameLabel.fixedToCamera = true;
+            this.continuegame.addChild(this.continuegameLabel);
+            this.continuegame.fixedToCamera = true;
+            if(JSON.parse(localStorage.getItem("save-quicksave"))!==null ) {
+                this.continuegame.tint = "0xffffff";
+
+            }
+            else
+                this.continuegame.tint = "0x5b5b5b";
 
             gr.destroy();
 
@@ -185,6 +203,8 @@
             this.load.shader('noise', 'assets/noise.frag');
             this.load.shader('galaxy1', 'assets/galaxy1.frag');
 
+            //this.load.audio('track1', 'assets/space.ogg');
+
         },
 
         create: function () {
@@ -222,17 +242,15 @@
 
 
 
-            var bmd = this.game.add.bitmapData(200, 200);
-            bmd.addToWorld(200, 200);
-            var w = 200/2;
-            //var sprite = this.game.add.sprite(100, 64, 'ship0');
-            for(var i=0;i<20;i++) {
-                bmd.draw('rock', w+40, 40+i*4);
-            }
-            //sprite = this.game.add.sprite(0, 104, 'ship1');
-            //bmd.draw(sprite,);
-            //sprite.tint = 0;
-            bmd.update();
+            // var bmd = this.game.add.bitmapData(200, 200);
+            // bmd.addToWorld(200, 200);
+            // var w = 200/2;
+            //
+            // for(var i=0;i<20;i++) {
+            //     bmd.draw('rock', w+40, 40+i*4);
+            // }
+
+            // bmd.update();
 
 
         },

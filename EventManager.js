@@ -15,6 +15,8 @@ function EventManager (game)
     this.game.onGeneratorEnabled = new  Phaser.Signal();
     this.game.onGeneratorDisabled = new  Phaser.Signal();
 
+
+
     this.game.onCapacitorEnabled = new  Phaser.Signal();
     this.game.onCapacitorDisabled = new  Phaser.Signal();
 
