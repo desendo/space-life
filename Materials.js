@@ -1,20 +1,6 @@
 var Materials = Materials || {};
 Materials.Asteroids = {};
-Materials =
-    {
-      asteroid1:
-          {
-              name: "asteroid1",
-              typeName: PickableObjectTypes.material,
-              title: "камень",
-              sprite: "rock",
-              density: 12,
-              descr: "часть обычного на вид астероида, может содержать полезные ископаемые " +
-              "в том числе и очень редкие. для подробной информации необходимо произвести" +
-              " исследование этого типа астероидов",
 
-          }
-    };
 Materials.Elements=
     {
         Al:{},
@@ -30,21 +16,22 @@ Materials.Asteroids.Minerals =
                 name: "c-type",
                 rarity: 0.75,
                 typeName: PickableObjectTypes.material,
-                title: "темный камень",
+                title: "темный пеористый камень",
                 sprite: "rock",
                 tint:"0xAAAAAA",
                 density: 1.2,
                 descr: "часть обычного на вид астероида, может содержать полезные ископаемые " +
                 "в том числе и очень редкие. для подробной информации необходимо произвести" +
                 " исследование этого типа астероидов",
-                contains1:{
-                    material:Materials.Elements.Fe,
-                    part: 0.10
-                },
-                contains2:{
-                    material:Materials.Elements.C,
-                    part: 0.50
-                },
+                contains:[
+                    {
+                        material:Materials.Elements.Fe,
+                        part: 0.10
+                    },
+                    {
+                        material:Materials.Elements.C,
+                        part: 0.50
+                    }]
             },
         typeM: {
                 name: "M-type",
@@ -57,38 +44,53 @@ Materials.Asteroids.Minerals =
                 descr: "часть обычного на вид астероида, может содержать полезные ископаемые " +
                 "в том числе и очень редкие. для подробной информации необходимо произвести" +
                 " исследование этого типа астероидов",
-                contains1:{
+                contains:[{
                     material:Materials.Elements.Fe,
                     part: 0.40
                 },
-                contains2:{
+                {
                     material:Materials.Elements.Ni,
                     part: 0.20
-                }
+                }]
             },
         typeS: {
                 name: "S-type",
                 rarity: 0.08,
                 typeName: PickableObjectTypes.material,
-                title: "j,s камень",
+                title: "серый камень",
                 tint:"0xFFFFFF",
                 sprite: "rock",
                 density: 5.2,
                 descr: "часть обычного на вид астероида, может содержать полезные ископаемые " +
                 "в том числе и очень редкие. для подробной информации необходимо произвести" +
                 " исследование этого типа астероидов",
-                contains1:{
+                contains:[{
                     material:Materials.Elements.Fe,
                     part: 0.40
                 },
-                contains2:{
+                {
                     material:Materials.Elements.Ni,
                     part: 0.40
-                }
+                }]
             }
     };
 Materials.Junks=
     {
+        ship: {
+            name: "ship junk",
+            rarity: 1,
+            typeName: PickableObjectTypes.material,
+            title: "обломки корабля",
+            sprite: "rock",
+            tint:"0x394250",
+            density: 1.2,
+            descr: " куски корабля оставшиеся после после взрыва",
+            contains:[{
+                material:Materials.Elements.Fe,
+                part: 0.80
+            }]
+
+        }
 
     };
 var Item =
@@ -112,6 +114,7 @@ var Item =
             this.b = this.game.add.sprite(this.x,this.y,this.config.sprite,this.config.frame||0);
             this.b.tint = this.config.tint || '0xFFFFFF';
             this.b.parentObject = this;
+
             this.b.scale.set(this.size);
             this.originalSize = this.size;
             this.b.smoothed=false;
@@ -130,7 +133,7 @@ var Item =
             this.b.body.mass=0.1;
             this.b.body.velocity.x=randomInteger(-5,5)/10;
             this.b.body.velocity.y=randomInteger(-5,5)/10;
-
+            this.b.body.parentObject = this;
         },
         setToolTip: function () {
             this.setInfo();
@@ -157,15 +160,17 @@ Material.constructor = function (x,y,game,config,colGroup,colGroups,volume) {
     this.volume = volume || 10;
     this.mass = this.material.density/10 * this.volume;
     Item.constructor.apply(this,arguments);
-
+    this.objType = ObjTypes.material;
     return this;
 };
 var EquipmentObject = Object.create(Item);
 EquipmentObject.constructor = function (x, y, game, config, colGroup, colGroups)
 {   this.size = 1;
     this.equipment = config;
+    this.type =  config.type;
     this.mass = config.mass;
     this.volume = config.volume || 10;
     Item.constructor.apply(this,arguments);
+    this.objType = ObjTypes.equipment;
     return this;
 };

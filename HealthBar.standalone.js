@@ -150,6 +150,9 @@ HealthBar.prototype.setPercent = function(newValue){
 
     this.updateTextInfo(newValue);
 };
+
+
+
     HealthBar.prototype.setMaxHealth = function (newValue) {
         this.maxHP = newValue;
         this.config.maxHP = newValue;

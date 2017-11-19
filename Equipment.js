@@ -58,6 +58,7 @@ Equipment.Hulls = {
     Ship0:
         {
             name: "Hunter",
+            id: 'Ship0',
             title: "охотник",
             descr: "перехватчик",
             mass: 150,
@@ -70,6 +71,7 @@ Equipment.Hulls = {
 
     Ship1:
         {   name: "Droplet",
+            id: 'Ship1',
             title: "Капелька 2050",
             descr: "Корпус устаревшей модели 2050 года выпуска. Поступила в производство в 50 лет назад, за 4 года до начала эпохи гиперпереходов. " +
             "Модель хороша своей универсальностью и относительной дешевизной. " +
@@ -77,11 +79,15 @@ Equipment.Hulls = {
             " Возможность установить гипердвигатель, при наличии достаточной ёмкости энергонакопителя, позволяет использовать корпус " +
             "и сейчас для разных задач.",
             mass: 150,
+            space: "150",
+
             shape: "ship1",
             sprite: "ship1",
+            scale: 2,
             secondaryEnginesSprite: "sidethrust1",
-            space: "50",
-            equipmentSlots:
+
+
+            slots:
                 {
                     weapon1:
                         {maxRoom: 10,pos: {x:0,y:-10},type: Equipment.Types.weapon,occupied:false},
@@ -122,6 +128,7 @@ Equipment.Hulls = {
 
     Ship2:
         {   name: "Droplet",
+            id: 'Ship2',
             mass: 500,
             shape: "ship1",
             sprite: "ship1",
@@ -221,8 +228,8 @@ Equipment.PowerPlants = {
             title: "реактор типа TWR-330",
             sprite: "generators",
             frame: 0,
-            mass: 40,
-            volume: 50,
+            mass: 20,
+            volume: 30,
             output: 5,
             price: 70,
             typeName: PickableObjectTypes.equipment,
@@ -237,8 +244,8 @@ Equipment.EnergyStorages = {
             title: "энергобанк на базе нанопленочных конденсаторов",
             sprite: "capacitors",
             frame: 0,
-            volume: 30,
-            mass: 40,
+            volume: 20,
+            mass: 5,
             capacity: 220,
             typeName: PickableObjectTypes.equipment,
             type: Equipment.Types.capacitor
@@ -254,7 +261,7 @@ Equipment.Grabbers = {
             frame: 0,
             radius: 100,
             volume:10,
-            mass:40,
+            mass:15,
             typeName: PickableObjectTypes.equipment,
             type: Equipment.Types.grabber
 
@@ -271,7 +278,7 @@ Equipment.Radars = {
             frame: 0,
             radius: 12000,
             volume:10,
-            mass:40,
+            mass:30,
             typeName: PickableObjectTypes.equipment,
             type: Equipment.Types.radar
 

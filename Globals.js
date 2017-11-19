@@ -1,14 +1,78 @@
 /**
  * Created by goblino on 14.10.2017.
  */
-var lang = 'ru';
+
+var defaultLang = 'en';
+var lang = defaultLang;
 T = {};
 
 T.ru= {
-            newgame: "Новая игра",
-            continuegame: "Продолжить"
+    langid: 'ru',
+    langname: 'Russian',
+    langtitle: 'Русский',
 
-        };
+    gamename: "Косможизнь",
+    newgame: "Новая игра",
+    continuegame: "Продолжить",
+
+    date:"Дата",
+    money:"Деньги",
+    speed: "Скорость",
+    fuel: "Топливо",
+
+    mass:"Масса",
+    acceleation:"Ускорение",
+    level:"уровень",
+    lvl:"ур.",
+    cargobay:"Грузовой отсек",
+    thrust:"тяга",
+    autocompensation:"автоком.",
+    freeflight:"свободный полет",
+
+    inatmosphereofplanet: "в атмосфере планеты",
+    inagravityofplanet: "В гравитационном поле планеты",
+    onsurfaceofplanet: "На поверхности планеты",
+
+    planetInfoButton: "Инфо",
+    planetTradeButton: "Торговля",
+    landZoneButton: "Место посадки",
+    shipYardButton: "Ангар",
+
+};
+T.en= {
+    langid: 'en',
+    langname: 'English',
+    langtitle: 'English',
+
+    gamename: "Space life",
+    newgame: "New game",
+    continuegame: "Continue",
+
+    date:"Date",
+    fuel: "Fuel",
+    money:"Money",
+    speed: "Speed",
+
+    mass:"Mass",
+    acceleation:"Acceleration",
+    level: "level",
+    lvl: "lvl",
+    cargobay: "Cargo bay",
+    thrust: "thrust",
+    autocompensation:"autocomp.",
+    freeflight:"free flight",
+    inatmosphereofplanet: "In the atmosphere of planet",
+    inagravityofplanet: "In the gravity of planet",
+    onsurfaceofplanet: "On the surface of planet",
+
+    planetInfoButton: "Info",
+    planetTradeButton: "Trade",
+    landZoneButton: "Land zone",
+    shipYardButton: "Hangar",
+
+
+
+};
 var GLOBAL = GLOBAL || {};
 GLOBAL.IS_DEBUG = false;
 GLOBAL.SPEED = 55;
@@ -57,3 +121,5 @@ var colorMiddle = "#9D9CA6";
 var colorLight = "#EDECF5";
 var colorFlue = "#0F41A6";
 var colorMetal = "#5283A3";
+
+

@@ -6,14 +6,22 @@ var Interface = {
 
         this.sizes = sizes;
         this.status = '';
-        this.miniMap = new Interface.MiniMap(sizes[0],this);
-        this.pilot = new Interface.Pilot('grahem',this);
-        this.labels = new Interface.Labels(this);
 
-        this.shipInterface = new Interface.ShipButtons(sizes,this);
-        this.shipMenu = new Interface.ShipMenu(this);
         this.mouseTooltip = new Interface.MouseTooltip(this);
 
+        this.miniMap = new Interface.MiniMap(sizes[0],this);
+        this.miniPlanet = new Interface.MiniPlanet(sizes[0],this);
+
+      //  this.pilot = new Interface.Pilot('grahem',this);
+        this.miniShip = new Interface.MiniShip(sizes[2],this);
+        this.labels = new Interface.Labels(this);
+
+        this.shipInterface = new Interface.ShipIconsButtons(sizes,this);
+        this.shipMenu = new Interface.ShipMenu(this);
+
+
+
+        this.game.onPlayerInit.add(this.updateIndicators,this);
         this.game.onPlayerDamage.add(this.updateIndicators,this);
         this.game.onPlayerInventoryChanged.add(this.shipMenu.data.InventoryChangeHandler,this);
         this.game.onCargoFull.add(function () {
@@ -22,17 +30,51 @@ var Interface = {
             }
         },this);
 
+        this.game.onPlayerLanded.add(this.landedHandler,this);
+        this.game.onPlayerUnlanded.add(this.unlandedHandler,this);
+        this.game.onEscPressed.add(this.escHandler,this);
+
         return this;
     },
+    unlandedHandler: function () {
+        this.miniMap.visible = true;
 
+        this.miniPlanet.hide();
+
+    },
+    landedHandler: function () {
+        var isLanding = arguments[1];
+
+
+            this.miniMap.visible = false;
+
+            this.miniPlanet.show(arguments[0]);
+
+
+
+    },
+    escHandler : function () {
+        if(this.shipMenu.visible)
+            this.OpenShipMenu();
+    },
     updateIndicators: function (params) {
 
+
+        if(params.maxHP!==undefined)
+        {
+
+            this.labels.hullBar.setMaxHealth(params.maxHP);
+            this.labels.hullBar.setHealth(params.maxHP);
+
+        }
 
         if(params.hull!==undefined)
         {
 
+
             this.labels.hullBar.setHealth(params.hull);
         }
+
 
 
     },
@@ -40,25 +82,30 @@ var Interface = {
         this.game = parent.game;
 
         var mouseTooltip = {};
+        mouseTooltip.w = 250;
+        mouseTooltip.h = 70;
         var gr = this.game.add.graphics(0,0);
         gr.lineStyle(2,"0x0F41A6");
         gr.beginFill("0x5283A3");
-        gr.drawRect(0,0,250,70);
+        gr.drawRect(0,0,mouseTooltip.w,mouseTooltip.h);
         gr.endFill();
-        this.bg = gr.generateTexture();
+        mouseTooltip.bg = gr.generateTexture();
         gr.destroy();
-        mouseTooltip.back = this.game.add.sprite(0,0,this.bg);
+        mouseTooltip.back = this.game.add.sprite(0,0,mouseTooltip.bg);
         mouseTooltip.back.anchor.set(0);
         mouseTooltip.tip = this.game.add.text(0,0," ",tooltip );
-        mouseTooltip.tip.setTextBounds(3, 3, 250, 64);
+        mouseTooltip.tip.setTextBounds(3, 3, mouseTooltip.w-20, mouseTooltip.h-6);
         mouseTooltip.tip.lineSpacing = -5;
         mouseTooltip.tip.anchor.set(0);
 
         mouseTooltip.aboveItem = function () {
 
-            if(!this.b.exists) {
+                var xShift = 10;
+                var yShift = -80;
+                if((this.game.input.x+mouseTooltip.w)>this.game.camera.width)
+                    xShift = -10 -mouseTooltip.w;
 
-                this.game.time.events.add(1000, function (arguments) {
+                this.game.time.events.add(500, function (arguments) {
                     console.log("above 500");
                 mouseTooltip.back.visible =true;
                 mouseTooltip.back.bringToTop();
@@ -66,17 +113,18 @@ var Interface = {
                 mouseTooltip.tip.bringToTop();
                 mouseTooltip.tip.text = arguments.info.summary;
 
-                mouseTooltip.tip.x = this.game.input.x+30 ;
-                mouseTooltip.back.x = this.game.input.x+30;
-                mouseTooltip.tip.y = this.game.input.y ;
-                mouseTooltip.back.y = this.game.input.y ;
+                mouseTooltip.tip.x = this.game.input.x+xShift ;
+                mouseTooltip.back.x = this.game.input.x+xShift;
+                mouseTooltip.tip.y = this.game.input.y +yShift;
+                mouseTooltip.back.y = this.game.input.y +yShift;
 
                 mouseTooltip.tip.fixedToCamera = true;
                 mouseTooltip.back.fixedToCamera = true;
                 },this,this);
-            }
+
         };
         mouseTooltip.outOfItem = function () {
+
             this.game.time.events.removeAll();
             mouseTooltip.tip.fixedToCamera = false;
             mouseTooltip.back.fixedToCamera = false;
@@ -92,17 +140,16 @@ var Interface = {
             mouseTooltip.tip.visible = false;
 
         };
+        mouseTooltip.tip.visible = false;
+        mouseTooltip.back.visible = false;
         return mouseTooltip
     },
-
     ShipMenu : function (parent) {
         this.game = parent.game;
         var game = this.game;
-        var ship = this.game.ship;
         var w = 400;
         var h = 500;
-        var zones =
-            {
+        var zones = {
 
                 shipInfo: {x:w*3/8,y:0,w:w*5/8,h:h*3/10,an:0},
                 shipContextInfo: {x:w*3/8,y:h*3/10,w:w*5/8,h:h*1/10,an:0},
@@ -121,6 +168,9 @@ var Interface = {
                             cellW:50,
                             cellH:50
                         }
+                },
+                shipHangar: {
+                    x:w,y:0,w:w,h:h,an:0,
                 },
                 //shipContext: {x:0,y:0,w:w*5/8,h:h*2/5,an:0},
 
@@ -182,7 +232,6 @@ var Interface = {
         zones.data.zonesGroup = this.game.add.group(this.game.interfaceGroup );
         zones.data.shipCargoGroup = {};
         zones.data.installedEquipmentGroup = {};
-        var  xPadding = (this.game.camera.width-w)/1.1;
         var  xPadding = 40;
         zones.data.xPadding = xPadding;
         var  yPadding = (this.game.camera.height-h)/5;
@@ -254,8 +303,7 @@ var Interface = {
         context.text+=" ";
         zones.shipContextInfo.sprite.addChild(context);
 
-        zones.shipView.createShipView = function(ship)
-        {
+        zones.shipView.createShipView = function(ship) {
             this.avatar = game.add.sprite(this.w/2,this.h/2,"ship1",4);
             this.avatar.anchor.set(0.5);
             this.avatar.alpha = 1;
@@ -267,8 +315,6 @@ var Interface = {
             game.world.bringToTop(zones.data.installedEquipmentGroup);
 
         };
-
-
         zones.shipView.addItem = function (item,i) {
 
 
@@ -277,27 +323,23 @@ var Interface = {
             var x = this.x + zones.data.xPadding + this.grid.cellW * (g+1) - cellW / 2;
             var y = this.y + zones.data.yPadding + this.grid.cellH * (k+1) - cellH / 2;
 
-
-
-
-
             item = item.parentObject;
-
-            item.b.scale.set( item.scale *0.8 || this.grid.cellW/item.b.width *0.8);
+            item.scale = cellW / item.b.width ;
+            item.b.scale.set( item.originalSize *2);
             item.b.reset(x,y);
 
             item.b.exists = false;
             item.b.visible = true;
-            //item.b.alive = true;
 
             item.b.inputEnabled = true;
             item.b.input.enableDrag();
 
 
-            item.b.input.enableSnap(cellW, cellH, false, true, Math.floor(-cellW / 2 -10), Math.floor(-cellH / 2 +10));
+            item.b.input.enableSnap(cellW, cellH, false, true, Math.floor(-cellW / 2 -10), Math.floor(-cellH / 2 -10));
             item.b.events.onDragStop.add(zones.shipCargo.onDragItemStop, zones.shipCargo.sprite);
 
             item.b.events.onDragStart.add(function () {
+                console.log("on drag start",arguments)
 
                 arguments[0].parentObject.originZone = zones.data.detectZone(arguments[0]);
                 arguments[0].parentObject.dragStart = {};
@@ -312,7 +354,6 @@ var Interface = {
             {
                 this.addItem( zones.data.installedEquipmentGroup.children[i],i);
             }
-//            zones.data.installedEquipmentGroup = equipmentItemsGroup;
 
             if (zones.visible) {
                 zones.visible = true;
@@ -321,8 +362,6 @@ var Interface = {
             else {
                 zones.visible = false;
                 zones.data.installedEquipmentGroup.visible= false;
-
-
             }
             game.world.bringToTop(zones.data.installedEquipmentGroup);
         };
@@ -342,35 +381,34 @@ var Interface = {
 
         };
         zones.data.InventoryChangeHandler = function () {
-            console.log(arguments);
-            console.log("zones.data.InventoryChangeHandler ");
+
+
             var ship = arguments[0];
 
-            this.shipMenu.shipCargo.populateGrid(ship);
+            this.shipMenu.shipCargo.updateCargoView(ship);
 
             this.shipMenu.shipView.updateShipView(ship);
 
         };
-    //    zones.shipInfo.updateShipView(ship);
         zones.shipCargo.onDragItemStop = function (item) {
 
         var ship = item.game.ship;
             if(zones.data.detectZone(item)===null) {
 
-                item.scale.set(item.parentObject.originalSize || 2);
+
+
                 ship.uninstallItem(item.parentObject);
                 ship.dropItem(item.parentObject);
                 this.game.onPlayerInventoryChanged.dispatch(ship);
 
             }
-            if(zones.data.detectZone(item)==='shipInfo') {
+            else if(zones.data.detectZone(item)==='shipInfo') {
 
                 item.x =item.parentObject.dragStart.x;
                 item.y=item.parentObject.dragStart.y;
 
             }
-            if(zones.data.detectZone(item)==='shipView'  && item.parentObject.originZone==='shipCargo') {
-                console.log("installing drag drop from cargo", item);
+            else if(zones.data.detectZone(item)==='shipView'  && item.parentObject.originZone==='shipCargo') {
                 var result = ship.installItem(item.parentObject);
                 if (result)
                 {
@@ -378,7 +416,7 @@ var Interface = {
 
                     ship.cargoItemsGroup.remove(item);
                     ship.installedEquipmentGroup.add(item);
-                    //ship.calcVolumeMass();
+
                     this.game.onPlayerInventoryChanged.dispatch(ship);
 
                 }
@@ -396,10 +434,9 @@ var Interface = {
 
 
             }
-            if(zones.data.detectZone(item)==='shipCargo' && item.parentObject.originZone==='shipView') {
+            else if(zones.data.detectZone(item)==='shipCargo' && item.parentObject.originZone==='shipView') {
 
                 console.log("uninstall", item);
-                //console.log("of ship", ship);
 
                ship.uninstallItem(item.parentObject);
             }
@@ -408,28 +445,24 @@ var Interface = {
         zones.shipCargo.addItem = function (item,i) {
 
             item = item.parentObject;
-            if (item.scale === undefined)
-                item.scale = cellW / item.b.width;
-             item.b.scale.set(item.scale);
+
+
+             item.b.scale.set(item.originalSize *2);
 
              var g =   i % this.cellsX;
              var k = Math.floor(i/this.cellsX);
-
-                // var k = Math.floor( i%this.cellsY);
-
              var x = this.x + zones.data.xPadding + this.grid.cellW * (g+1) - cellW / 2;
             var y = this.y + zones.data.yPadding + this.grid.cellH * (k+1) - cellH / 2;
             item.b.reset(x,y);
 
             item.b.exists = false;
             item.b.visible = true;
-            //item.b.alive = true;
 
             item.b.inputEnabled = true;
             item.b.input.enableDrag();
 
 
-            item.b.input.enableSnap(cellW, cellH, false, true, Math.floor(-cellW / 2 -10), Math.floor(-cellH / 2 +10));
+            item.b.input.enableSnap(cellW, cellH, false, true, Math.floor(-cellW / 2 -10), Math.floor(-cellH / 2 -10));
             item.b.events.onDragStop.add(zones.shipCargo.onDragItemStop, zones.shipCargo.sprite);
             item.b.events.onDragStart.add(function () {
                 arguments[0].parentObject.originZone = zones.data.detectZone(arguments[0]);
@@ -439,11 +472,9 @@ var Interface = {
             });
 
 
-         //  item.b.bringToTop();
 
         };
-
-        zones.shipCargo.populateGrid = function (ship) {
+        zones.shipCargo.updateCargoView = function (ship) {
 
             var cargoItemsGroup = ship.cargoItemsGroup;
 
@@ -472,51 +503,51 @@ var Interface = {
 
 
         };
-
         zones.visible = false;
         return zones;
     },
     OpenShipMenu: function () {
 
         this.shipMenu.visible = !this.shipMenu.visible;
-
         this.shipMenu.data.zonesGroup.visible = this.shipMenu.visible;
-
-
         this.shipMenu.data.shipCargoGroup.visible = this.shipMenu.visible;
         this.shipMenu.data.installedEquipmentGroup.visible = this.shipMenu.visible;
 
     },
-    ShipButtons: function (sizes,parent) {
-
+    ShipIconsButtons: function (sizes,parent) {
         this.game = parent.game;
         var ship = this.game.ship;
-
         var btns = {};
-        btns.sizes = sizes || [100,100,100];
-        var w = (btns.sizes[0]+96);
-        var h = (this.game.height);
 
+        btns.sizes = sizes || [100,100,100];
+        var w = (this.game.width - btns.sizes[2]+16);
+        var h = (this.game.height)-sizes[2]-16;
+
+        var n = 0; // номер кнопки
+        var f = 3; // фреймов на кнопку
+        var sp = 32; //расстояние между кнопками
         btns.buttonsGroup = this.game.add.group();
 
+        btns.shipMenuButton = this.game.add.button(w+sp*n,h,'spaceicons',parent.OpenShipMenu,parent,
+            n*f,n*f+1,n*f,n*f,btns.buttonsGroup);
+        btns.shipMenuButton.setCustomDefaults(n*f+2,n*f+1);
+        btns.shipMenuButton.enable(true);
+        n++;
 
-
-        btns.shipMenuButton = this.game.add.button(w,h,'shipButton',parent.OpenShipMenu,parent,1,3,2,1,btns.buttonsGroup);
-        btns.shipMenuButton.setCustomDefaults(0,3);
-//todo make events ship.grabItems
-        btns.shipGrab = this.game.add.button(w,h-32,'shipButton',"",ship,1+4,3+4,2+4,1+4,btns.buttonsGroup);
-        btns.shipGrab.setCustomDefaults(0+4,3+4);
+        btns.shipGrab = this.game.add.button(w+sp*n,h,'spaceicons',"",parent,
+            n*f,n*f+1,n*f,n*f,btns.buttonsGroup);
+        btns.shipGrab.setCustomDefaults(n*f+2,n*f+1);
         btns.shipGrab.enable(false);
-//todo make events ship.fillFuel
-        btns.shipFuel = this.game.add.button(w,h-32*2,'shipButton',"",ship,1+4*2,3+4*2,2+4*2,1+4*2,btns.buttonsGroup);
-        btns.shipFuel.setCustomDefaults(0+4*2,3+4*2);
+        n++;
+        btns.shipFuel = this.game.add.button(w+sp*n,h,'spaceicons',"",parent,
+            n*f,n*f+1,n*f,n*f,btns.buttonsGroup);
+        btns.shipFuel.setCustomDefaults(n*f+2,n*f+1);
         btns.shipFuel.enable(false);
-//todo make events ship.sellMaterials
-        btns.shipSell = this.game.add.button(w,h-32*3,'shipButton',"",ship,1+4*3,3+4*3,2+4*3,1+4*3,btns.buttonsGroup);
-        btns.shipSell.setCustomDefaults(0+4*3,3+4*3);
-        btns.shipSell.enable(false);
-
-
+        n++;
+        btns.intercom = this.game.add.button(w+sp*n,h,'spaceicons',"",parent,
+            n*f,n*f+1,n*f,n*f,btns.buttonsGroup);
+        btns.intercom.setCustomDefaults(n*f+2,n*f+1);
+        btns.intercom.enable(false);
 
 
         btns.hide = function () {
@@ -532,6 +563,7 @@ var Interface = {
         } ;
 
         return btns;
+
     },
     Labels: function (parent) {
         var labels = {};
@@ -593,25 +625,30 @@ var Interface = {
 
         labels.labelSay.fixedToCamera = true;
 
-
         var  configArmorBar = {
             width: 130,
             height: 14,
             x: labels.game.camera.width-65,
             y: labels.game.camera.height-150-14-10,
-            maxHP:150,
+            maxHP:180,
             bg: {
-                color: '#292536'
+                color: '#36080c'
             },
             bar: {
-                color: '#3c66bc'
+                color: '#bc0209'
             },
             animationDuration: 200,
             flipped: false
         };
         labels.hullBar = new HealthBar(labels.game, configArmorBar);
         labels.hullBar.setFixedToCamera(true);
-        labels.hullBar.setHealth(150);
+        labels.hullBar.bgSprite.inputEnabled = true;
+        labels.hullBar.bgSprite.info={summary:"прочность корпуса"};
+
+        labels.hullBar.bgSprite.events.onInputOver.add(parent.mouseTooltip.aboveItem,labels.hullBar.bgSprite);
+        labels.hullBar.bgSprite.events.onInputOut.add(parent.mouseTooltip.outOfItem,labels.hullBar.bgSprite);
+
+        labels.hullBar.setHealth(140);
 
         labels.blinkLabel=function (label) {
             label.isBlinking = true;
@@ -635,26 +672,29 @@ var Interface = {
     updateLabels: function (game) {
         this.game=game;
         var ship = this.game.ship;
+
         if(this.resetFontBug)
         {this.c++;
             if(this.c>5) {
                 for (label in this.labels) {
-                    this.labels[label].text = "";
+                    this.labels[label].text = " ";
                 }
                 this.resetFontBug = false;
+
+                this.miniPlanet.updateTextBug();
             }
         }
 
         var labels = this.labels;
-        if (ship.fuel < 0) ship.fuel = 0;
-        labels.labelFuel.text = "Топливо: "+ Math.round(ship.fuel*100)/100;
-        labels.labelAcc.text = "Ускорение: "+ ship.acc.toFixed(2)+"g";
-        labels.labelMass.text = "Масса: "+ ship.mass+"t";
-        labels.labelCargo.text = "Грузовой отсек: "+ ship.cargoBay+"/"+ship.cargoBayCap;
 
-        // labels.labelDamping.text = (ship.b.body.damping==0 || ship.vel<1) ? "" : "аэродин.торм.: "+ ship.b.body.damping.toFixed(1) ;
-        // labels.labelDamping.style.backgroundColor = "#ff9300";
-        // labels.labelDamping.style.fill = "#030329";
+        if (ship.fuel < 0) ship.fuel = 0;
+
+        labels.labelFuel.text = T[lang].fuel+ ": "+ Math.round(ship.fuel*100)/100;
+        labels.labelAcc.text = T[lang].acceleation+ ": "+ ship.acc.toFixed(2)+"g";
+        labels.labelMass.text = T[lang].mass+ ": "+ ship.mass+"t";
+        labels.labelCargo.text = T[lang].cargobay+ ": "+ ship.cargoBay+"/"+ship.cargoBayCap;
+
+
 
 
         var detail = 10;
@@ -668,7 +708,7 @@ var Interface = {
                 string +=" ";
         }
         string = "["+string+"]";
-        labels.labelThrustLevel.text = "тяга: (Z)"+ string +"(X)";
+        labels.labelThrustLevel.text = T[lang].thrust+": (Z)"+ string +"(X)";
         labels.labelThrustLevel.inputEnabled = true;
         labels.labelThrustLevel.events.onInputOut.add(function () {
             game.wheelDelta.valueToChange = null;
@@ -691,7 +731,7 @@ var Interface = {
                 string +=" ";
         }
         string = "["+string+"]";
-        labels.labelThrustDumpLevel.text = "уров (C)"+ string +"(V)";
+        labels.labelThrustDumpLevel.text = T[lang].lvl+" (C)"+ string +"(V)";
         labels.labelThrustDumpLevel.inputEnabled = true;
         labels.labelThrustDumpLevel.events.onInputOut.add(function () {
             game.wheelDelta.valueToChange = null;
@@ -699,11 +739,10 @@ var Interface = {
         },this);
         labels.labelThrustDumpLevel.events.onInputOver.add(function () {
             game.wheelDelta.setVal(ship,'thrustCurrentDamp', 5);
-
         });
-        labels.labelCustomStatus.text = ship.globalStatus ;
+        labels.labelCustomStatus.text = ship.globalStatus ||"";
 
-        labels.labelFlightMode.text = ship.isFreeFlight ? "свободный полет (F)" : " автокомп."+ship.thrustCurrentDamp+"/"+ship.thrustMaximum+"  (F) ";
+        labels.labelFlightMode.text = ship.isFreeFlight ? T[lang].freeflight+" (F)" : T[lang].autocompensation+""+ship.thrustCurrentDamp+"/"+ship.thrustMaximum+"  (F) ";
         labels.labelFlightMode.style.backgroundColor = ship.isFreeFlight ? "transparent" : "#ff9300";
         labels.labelFlightMode.style.fill = ship.isFreeFlight ? "white" : "black";
 
@@ -712,9 +751,9 @@ var Interface = {
         labels.labelFlightStatus.style.backgroundColor = customBack;
         labels.labelFlightStatus.style.fill = customFill;
 
-        labels.labelMoney.text = "Деньги: " + Math.round(ship.money);
+        labels.labelMoney.text = T[lang].money+": " + Math.round(ship.money);
 
-        labels.labelSpeed.text =  "Скорость: " + Math.round(ship.vel)/10 +" km/s";
+        labels.labelSpeed.text =  T[lang].speed+": " + Math.round(ship.vel/2)/10+" km/s";
 
 
         if (ship.isLanded) { labels.status = " на поверхности ";
@@ -735,7 +774,7 @@ var Interface = {
             this.UpdateUnitDots(this.game);
 
 
-            labels.labelDate.text = "Дата: " + Math.floor(this.game.day / 360) + "." + (Math.floor((this.game.day % 360) / 30) + 1) + "." + ((this.game.day % 360) % 30 + 1);
+            labels.labelDate.text = T[lang].date+": " + Math.floor(this.game.day / 360) + "." + (Math.floor((this.game.day % 360) / 30) + 1) + "." + ((this.game.day % 360) % 30 + 1);
 
             this.game.counter = 0;
         }
@@ -749,6 +788,7 @@ var Interface = {
         var pilot={};
         pilot.parent = parent;
         pilot.game = parent.game;
+        pilot.hp = 100;
         var x = pilot.game.camera.view.width;
         var y = pilot.game.camera.view.height;
         var w = 130;
@@ -812,9 +852,9 @@ var Interface = {
             flipped: false
         };
 
-        pilot.hpbar = new HealthBar(pilot.game, config);
-        pilot.hpbar.setFixedToCamera(true);
-        pilot.hpbar.setPercent(100);
+        //pilot.hpbar = new HealthBar(pilot.game, config);
+        //pilot.hpbar.setFixedToCamera(true);
+        //pilot.hpbar.setPercent(100);
 
         pilot.say = function (text) {
             pilot.parent.labels.labelSay.text = text;
@@ -823,17 +863,17 @@ var Interface = {
             },this,this);
         };
         pilot.updateDamagePicture = function () {
-            if(pilot.hpbar.percents==100)
+            if(pilot.hp==100)
                 pilot.d.animations.play('d0',6,true,false);
-            if(pilot.hpbar.percents<100)
+            if(pilot.hp<100)
                 pilot.d.animations.play('d1',6,true,false);
-            if(pilot.hpbar.percents<80)
+            if(pilot.hp<80)
                 pilot.d.animations.play('d2',6,true,false);
-            if(pilot.hpbar.percents<50)
+            if(pilot.hp<50)
                 pilot.d.animations.play('d3',6,true,false);
-            if(pilot.hpbar.percents<25)
+            if(pilot.hp<25)
                 pilot.d.animations.play('d4',6,true,false);
-            if(pilot.hpbar.percents<=10)
+            if(pilot.hp<=10)
                 pilot.d.animations.play('d5',6,true,false);
 
         };
@@ -850,14 +890,17 @@ var Interface = {
         };
         return pilot;
     },
+    MiniShip : function () {
+
+    },
     MiniMap : function (size,parent) {
         this.game = parent.game;
         var worldSize = this.game.worldSize;
         var mMap = {};
         mMap.buttons = this.game.add.group();
-        mMap.UIblock = this.game.add.group();
+        mMap.mMapGroup = this.game.add.group();
         mMap.zoom = 1;
-        mMap.alpha = 0.5;
+        mMap.alpha = 1;
         var minimapSize = size;
         var gameSize = this.game.width;
 
@@ -875,17 +918,17 @@ var Interface = {
         mMap.resolution = minimapSize / worldSize *mMap.zoom *16*16;
 
 
-        mMap.UIblock.add(mMap.UIframe);
+        mMap.mMapGroup.add(mMap.UIframe);
 
         mMap.unitDots = this.game.add.graphics(0, 0);
         mMap.unitDots.fixedToCamera = true;
 
-        mMap.UIblock.add(mMap.unitDots);
+        mMap.mMapGroup.add(mMap.unitDots);
 
         mMap.localX = mMap.UIframe.width;
         mMap.localY = this.game.camera.view.height - mMap.UIframe.height;
         mMap.UIframe.y = mMap.localY;
-        mMap.UIframe.fixedToCamera = mMap;
+        mMap.UIframe.fixedToCamera = true;
 
 
 
@@ -923,6 +966,7 @@ var Interface = {
         mMap.buttons.add(mMap.labelZoom);
         mMap.buttons.fixedToCamera=true;
         mMap._enabled = false;
+        mMap._visible = true;
         Object.defineProperty(mMap, "enabled", {
 
             get: function() {
@@ -931,12 +975,27 @@ var Interface = {
 
             set: function(value) {
 
-                this.UIblock.visible = value;
-                this.buttons.visible = value;
+                this.mMapGroup.visible = value && this.visible;
+                this.buttons.visible = value && this.visible;
                 this._enabled = value;
 
             }
         });
+        Object.defineProperty(mMap, "visible", {
+
+            get: function() {
+                return this._visible;
+            },
+
+            set: function(value) {
+
+                this.mMapGroup.visible = value && this.enabled;
+                this.buttons.visible = value && this.enabled;
+                this._visible = value;
+
+            }
+        });
+
         mMap.hide = function () {
 
             mMap.enabled = false;
@@ -949,6 +1008,131 @@ var Interface = {
         mMap.enabled = false;
         return mMap;
     },
+    MiniPlanet: function (size,parent) {
+        var mPlanet={};
+
+        var game = parent.game;
+        mPlanet.alpha = 0.5;
+        mPlanet.parent = parent;
+
+        mPlanet.localX = size;
+        mPlanet.localY = game.camera.view.height - size;
+
+        mPlanet.UIframe = game.add.graphics(0, mPlanet.localY );
+        mPlanet.UIframe.lineStyle(1, interfaceColor1, mPlanet.alpha);
+        mPlanet.UIframe.beginFill('0x000000', mPlanet.alpha);
+        //this.UIframe.beginFill(interfaceColor2, 1);
+        mPlanet.UIframe.drawRect(0, 0, size, size);
+        mPlanet.UIframe.endFill();
+        mPlanet.UIframe.fixedToCamera = true;
+        mPlanet.mPlanetGroup = game.add.group();
+        mPlanet.mPlanetButtonsGroup = game.add.group(mPlanet.mPlanetGroup);
+
+        ///buttons
+        var buttonHeight = 32;
+        var i = 0; //bitton iteration
+
+        i++;
+        mPlanet.infoButton = game.add.button(size,mPlanet.localY+size-(buttonHeight* i),'whitebuttons',"",this,1,0,2,1,mPlanet.mPlanetGroup);
+        mPlanet.infoButton.fixedToCamera = true;
+        mPlanet.infoButton.tint = "0x"+"#abf7ff".slice(1, 7);
+
+        mPlanet.infoButton.text = game.add.text(0, 0, T[lang].planetInfoButton, {font: "12px Roboto mono", fill: "#000000", boundsAlignH: "center",boundsAlignV:"bottom"});
+        mPlanet.infoButton.text.id = 'planetInfoButton';
+        mPlanet.infoButton.text.setTextBounds(0,0,96,32);
+        mPlanet.infoButton.addChild(mPlanet.infoButton.text);
+
+        mPlanet.mPlanetButtonsGroup.add(mPlanet.infoButton);
+
+        i++;
+        mPlanet.tradeButton = game.add.button(size,mPlanet.localY+size-(buttonHeight* i),'whitebuttons',"",this,1,0,2,1,mPlanet.mPlanetGroup);
+        mPlanet.tradeButton.fixedToCamera = true;
+        mPlanet.tradeButton.tint = "0x"+"#abf7ff".slice(1, 7);
+
+        mPlanet.tradeButton.text = game.add.text(0, 0, T[lang].planetTradeButton, {font: "12px Roboto mono", fill: "#000000", boundsAlignH: "center",boundsAlignV:"middle"});
+        mPlanet.tradeButton.text.id = 'planetTradeButton';
+        mPlanet.tradeButton.text.setTextBounds(0,0,96,32);
+        mPlanet.tradeButton.addChild(mPlanet.tradeButton.text);
+
+        mPlanet.mPlanetButtonsGroup.add(mPlanet.tradeButton);
+
+        i++;
+        mPlanet.landZoneButton = game.add.button(size,mPlanet.localY+size-(buttonHeight* i),'whitebuttons',"",this,1,0,2,1,mPlanet.mPlanetGroup);
+        mPlanet.landZoneButton.fixedToCamera = true;
+        mPlanet.landZoneButton.tint = "0x"+"#abf7ff".slice(1, 7);
+
+        mPlanet.landZoneButton.text = game.add.text(0, 0, T[lang].landZoneButton, {font: "12px Roboto mono", fill: "#000000", boundsAlignH: "center",boundsAlignV:"middle"});
+        mPlanet.landZoneButton.text.id = 'landZoneButton';
+        mPlanet.landZoneButton.text.setTextBounds(0,0,96,32);
+        mPlanet.landZoneButton.addChild(mPlanet.landZoneButton.text);
+
+        mPlanet.mPlanetButtonsGroup.add(mPlanet.landZoneButton);
+
+        i++;
+        mPlanet.shipYardButton = game.add.button(size,mPlanet.localY+size-(buttonHeight* i),'whitebuttons',"",this,1,0,2,1,mPlanet.mPlanetGroup);
+        mPlanet.shipYardButton.fixedToCamera = true;
+        mPlanet.shipYardButton.tint = "0x"+"#abf7ff".slice(1, 7);
+
+        mPlanet.shipYardButton.text = game.add.text(0, 0, T[lang].shipYardButton, {font: "12px Roboto mono", fill: "#000000", boundsAlignH: "center",boundsAlignV:"middle"});
+        mPlanet.shipYardButton.text.id = 'shipYardButton';
+        mPlanet.shipYardButton.text.setTextBounds(0,0,96,32);
+        mPlanet.shipYardButton.addChild(mPlanet.shipYardButton.text);
+
+        mPlanet.mPlanetButtonsGroup.add(mPlanet.shipYardButton);
+
+        mPlanet.updateTextBug = function () {
+            this.mPlanetButtonsGroup.forEach(function (button) {
+
+              button.text.text+=" ";
+                button.text.text = button.text.text.trim();
+            })
+        };
+
+        console.log(mPlanet.localY);
+        mPlanet.UIframe.y = mPlanet.localY;
+        mPlanet.mPlanetGroup.add(mPlanet.UIframe);
+        Object.defineProperty(mPlanet, "visible", {
+
+            get: function() {
+                return this._visible;
+            },
+
+            set: function(value) {
+
+                this.mPlanetGroup.visible = value;
+                this._visible = value;
+
+            }
+        });
+        mPlanet.visible = true;
+        mPlanet.show = function (planet) {
+
+
+            mPlanet.visible = true;
+
+            mPlanet.mPlanetButtonsGroup.forEach(function (button) {
+
+                if( mPlanet.parent.game.ship.planetLanded!==undefined && mPlanet.parent.game.ship.planetLanded!==null) {
+
+                    console.log("planet landed", mPlanet.parent.game.ship.planetLanded);
+                    button.text.text = button.text.text;
+                    console.log( button.text.text);
+                    if (button.text.text = mPlanet.parent.game.ship.planetLanded.places !== undefined) {
+                        button.text.text = mPlanet.parent.game.ship.planetLanded.places[button.text.text.id][lang].title;
+                    }
+
+                }
+            })
+
+
+        };
+        mPlanet.hide = function () {
+
+            mPlanet.visible = false;
+
+        };
+        return mPlanet;
+    },
     UpdateUnitDots : function (game) {
 
         this.game = game;
@@ -957,11 +1141,11 @@ var Interface = {
         var  miniMap = this.miniMap;
         miniMap.unitDots.clear();
 
-        if(miniMap.enabled && ship.eq.radar.radius!==undefined && ship.eq.radar.radius>0) {
+        if(miniMap.enabled &&  miniMap.visible && ship.eq.radar.radius!==undefined && ship.eq.radar.radius>0) {
             for(var i = 0,j=this.game.spaceObjects.length;i<j;i++)
             {
                 var object =this.game.spaceObjects[i];
-                if(object.b.exists) {
+                if(object.b.visible) {
 
                     var unitMiniX = (object.b.x - ship.b.x) * miniMap.resolution * miniMap.zoom + miniMap.UIframe.width / 2;
                     var unitMiniY = (object.b.y - ship.b.y) * miniMap.resolution * miniMap.zoom + miniMap.UIframe.height / 2;
@@ -970,26 +1154,26 @@ var Interface = {
 
                     if (unitMiniX < miniMap.UIframe.width && unitMiniX > 0 && unitMiniY < miniMap.UIframe.height && unitMiniY > 0) {
                         //if(true ) {
-                        if (object.objType === 'planet') {
+                        if (object.objType === ObjTypes.planet) {
 
                             miniMap.unitDots.beginFill(mapColorPlanet, 0.5);
                             miniMap.unitDots.drawCircle(unitMiniX, unitMiniY + miniMap.localY, 8);
 
                         }
-                        else if (object.objType === 'asteroid') {
+                        else if (object.objType === ObjTypes.asteroid) {
                             if (object.health !== -1) {
                                 miniMap.unitDots.beginFill(mapColorAsteroidField, 0.5);
                                 miniMap.unitDots.drawRect(unitMiniX, unitMiniY + miniMap.localY, 2, 2);
                             }
 
                         }
-                        else if (object.objType === 'player') {
+                        else if (object.objType === ObjTypes.player) {
 
                             miniMap.unitDots.beginFill(mapColorPlayer, 1);
                             miniMap.unitDots.drawRect(unitMiniX - 1, unitMiniY + miniMap.localY - 1, 4, 4);
 
                         }
-                        else if (object.objType === 'ship') {
+                        else if (object.objType === ObjTypes.ship) {
 
                             miniMap.unitDots.beginFill(mapColorPlayer, 0.5);
                             miniMap.unitDots.drawRect(unitMiniX - 1, unitMiniY + miniMap.localY - 1, 4, 4);
@@ -1010,9 +1194,8 @@ var Interface = {
 
         }
 
-        miniMap.UIblock.sendToBack(miniMap.UIframe);
+        miniMap.mMapGroup.sendToBack(miniMap.UIframe);
 
     }
 
 };
-
