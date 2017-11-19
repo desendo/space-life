@@ -957,7 +957,7 @@ Ship.prototype.loadPhysicsFromData = function (data) {
     this.b.body.velocity.x = data.velocityx || 0;
     this.b.body.velocity.y = data.velocityy || 0;
     this.b.body.rotation = data.rotation || 0;
-    console.log(this.objType, data.rotation);
+
 };
 Ship.prototype.DamageHandler = function (dmg) {
 
@@ -985,7 +985,7 @@ function NPC (data,game){
     this.loadPhysicsFromData(data);
 
     this.ai = new AI(this.behavior,this);
-    console.log(data);
+
     this.b.body.collides(this.game.spaceBodiesColGroup, this.colCallback, this);
     this.eq.engine = Equipment.Engines.RD300;
     this.eq.weapon = Equipment.Weapons.Laser1;
@@ -1100,6 +1100,7 @@ Player.prototype.initHull = function () {
 
     this.cargoBayCap = this.eq.hull.space;
     this.name = this.eq.hull.name;
+    this.game.onPlayerInit.dispatch({maxHP: this.eq.hull.mass})
 };
 Player.prototype.createPickableObjects = function () {
 
@@ -1242,7 +1243,7 @@ Player.prototype.readKeys = function () {
 
 Player.prototype.colCallback = function (shipBody,collidedBody) {
 
-
+    var collisionEnergyFactor = 0.2;
 
     var mass = collidedBody.mass;
     if(collidedBody.mass>100000)
@@ -1262,7 +1263,7 @@ Player.prototype.colCallback = function (shipBody,collidedBody) {
 
     if(shipBody.parentObject.isStarting!==true && velSq>1 && collidedBody.parentObject.objType!==ObjTypes.equipment) {
         //console.log("Energy: "+collisionEnergy +", vel: "+velSq +", mass: "+mass);
-        shipBody.parentObject.DamageHandler(Math.floor(collisionEnergy/5) );
+        shipBody.parentObject.DamageHandler(Math.floor(collisionEnergy * collisionEnergyFactor) );
 
     }
     if(collidedBody.parentObject!==undefined && !shipBody.parentObject.isDead && collidedBody.parentObject.objType===ObjTypes.planet)
@@ -1290,14 +1291,14 @@ Player.prototype.Land = function (planet = null) {
     // this.b.visible  = true;
 
     this.planetLanded = planet;
-    //this.game.onPlayerLanded.dispatch(this.planetLanded,true );
+    if(this.planetLanded.spr)
+        this.planetLanded.spr.visible = true;
     this.isStarting = false;
     this.vel = 0;
     this.oldVel = 0;
 
 };
 Player.prototype.unLand = function () {
-    //this.game.onPlayerLanded.active = false;
     this.game.onPlayerUnlanded.dispatch(this.planetLanded,false);
     this.isStarting = true;
 
@@ -1309,7 +1310,8 @@ Player.prototype.unLand = function () {
 
     this.b.exists = true;
     this.isLanded = false;
-
+    if(this.planetLanded.spr)
+        this.planetLanded.spr.visible = false;
     this.planetLanded = null;
 
 };

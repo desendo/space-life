@@ -33,6 +33,11 @@ T.ru= {
     inagravityofplanet: "В гравитационном поле планеты",
     onsurfaceofplanet: "На поверхности планеты",
 
+    planetInfoButton: "Инфо",
+    planetTradeButton: "Торговля",
+    landZoneButton: "Место посадки",
+    shipYardButton: "Ангар",
+
 };
 T.en= {
     langid: 'en',
@@ -59,6 +64,12 @@ T.en= {
     inatmosphereofplanet: "In the atmosphere of planet",
     inagravityofplanet: "In the gravity of planet",
     onsurfaceofplanet: "On the surface of planet",
+
+    planetInfoButton: "Info",
+    planetTradeButton: "Trade",
+    landZoneButton: "Land zone",
+    shipYardButton: "Hangar",
+
 
 
 };

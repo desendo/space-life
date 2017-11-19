@@ -85,8 +85,9 @@ TheGame.MainState.prototype = {
         }
 
 
-        game.onPlayerDead.add(gameOver,this);
-        game.onPlayerDead.add(this.game.userInterface.pilot.disConnect,this);
+        game.onPlayerDead.add(this.playerDeathHandler,this);
+
+
 
         game.onQuickLoad.add(game.loadGame,game);
         game.onQuickSave.add(game.saveGame,game);
@@ -94,6 +95,12 @@ TheGame.MainState.prototype = {
 
         //this.music = this.game.add.audio('track1', .3, true);
         //this.music.play();
+
+    },
+    playerDeathHandler : function () {
+        this.gameOver();
+        if (this.game.userInterface.pilot)
+            this.game.userInterface.pilot.disconnect();
 
     },
     update: function() {

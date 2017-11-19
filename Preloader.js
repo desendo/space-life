@@ -181,6 +181,7 @@
             this.load.spritesheet('asteroids1',assets+'asteroids1.png',32,32,8,0,0);
             this.load.spritesheet('glow',assets+'glow.png',32,32,4,0,0);
             this.load.spritesheet('buttons',assets+'buttons.png',75,25,9);
+            this.load.spritesheet('whitebuttons',assets+'button1.png',96,96/3,3);
             this.load.spritesheet('spaceicons',assets+'spaceicons.png',20,20,-1,0,0);
 
 
