@@ -85,7 +85,7 @@ var Interface = {
         mouseTooltip.w = 250;
         mouseTooltip.h = 70;
         var gr = this.game.add.graphics(0,0);
-        gr.lineStyle(2,"0x0F41A6");
+        //gr.lineStyle(2,"0x0F41A6");
         gr.beginFill("0x5283A3");
         gr.drawRect(0,0,mouseTooltip.w,mouseTooltip.h);
         gr.endFill();
@@ -169,8 +169,11 @@ var Interface = {
                             cellH:50
                         }
                 },
-                shipHangar: {
-                    x:w,y:0,w:w,h:h,an:0,
+                shipHangarInterface: {
+                    x:w,y:0,w:w,h:h*0.6,an:0,
+                },
+                shipHangarCellZone: {
+                    x:w,y:h*0.6,w:w,h:h*0.4,an:0,
                 },
                 //shipContext: {x:0,y:0,w:w*5/8,h:h*2/5,an:0},
 
@@ -179,6 +182,7 @@ var Interface = {
 
 
             };
+        zones.data.isHangar = false;
         Object.defineProperty(zones, "_visible", {
             value: false,
             enumerable: false,
@@ -202,6 +206,8 @@ var Interface = {
                 this._visible = value;
                 for (var z in this)
                 {
+
+
 
                     this[z].sprite.visible = this._visible;
                     if (typeof this[z].grid != "undefined")
